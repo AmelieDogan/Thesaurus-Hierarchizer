@@ -1,0 +1,1357 @@
+{
+  "pipeline_execution": {
+    "start_time": null,
+    "end_time": "2025-09-03T09:15:26.085617",
+    "total_phases": 7,
+    "completed_phases": 7,
+    "config_used": {
+      "uri_base": "http://data.cmbv.org/vocabulary/",
+      "output_dir": "output",
+      "xml_language": "fr"
+    }
+  },
+  "phase_statistics": {
+    "phase1": {
+      "total_terms": 2456,
+      "terms_with_definitions": "607",
+      "terms_with_altlabels": "115",
+      "total_existing_broader_relations": 724,
+      "existing_broader_with_resolved_uris": 712,
+      "existing_broader_unresolved": 12,
+      "total_preflabel_broader_relations": 45,
+      "preflabel_broader_existing_parents": 31,
+      "preflabel_broader_candidate_parents": 14,
+      "total_candidate_parents_detected": 3,
+      "terms_with_broader_from_preflabel": 45,
+      "uris_generated": 2456,
+      "average_word_frequency": 2.0,
+      "top_candidate_parents": [
+        [
+          "voix",
+          14
+        ],
+        [
+          "instrument",
+          8
+        ],
+        [
+          "liturgie",
+          3
+        ],
+        [
+          "famille d instruments",
+          3
+        ],
+        [
+          "musique",
+          3
+        ]
+      ],
+      "lexical_indexes_created": 3,
+      "preflabel_to_uri_mappings": 2435,
+      "altlabel_to_uri_mappings": 365
+    },
+    "phase2": {
+      "word_inclusion_relations": 2153,
+      "existing_parent_matches": 1288,
+      "candidate_parent_matches": 865,
+      "candidate_parents_found": 114,
+      "de_pattern_relations": 277,
+      "de_pattern_existing_matches": 194,
+      "de_pattern_candidate_matches": 83,
+      "en_pattern_relations": 37,
+      "en_pattern_existing_matches": 27,
+      "en_pattern_candidate_matches": 10,
+      "pour_pattern_relations": 30,
+      "pour_pattern_existing_matches": 30,
+      "pour_pattern_candidate_matches": 0,
+      "adjectival_relations": 129,
+      "adjectival_existing_matches": 103,
+      "adjectival_candidate_matches": 26
+    },
+    "phase3": {
+      "total_relations": 896,
+      "lexical_families_count": 488,
+      "relations_by_category": {
+        "lexical_family_generic": 670,
+        "lexical_family_similarity": 31,
+        "lexical_prefix": 195
+      },
+      "confidence_distribution": {
+        "0.8-0.9": 687,
+        "0.9-1.0": 13,
+        "0.7-0.8": 195,
+        "0.6-0.7": 1
+      },
+      "method_distribution": {
+        "lexical_similarity": 896
+      }
+    },
+    "phase4": {
+      "patterns_extracted": 491,
+      "contexts_built": 4930,
+      "contextual_embeddings_calculated": 2474,
+      "contextual_embeddings_from_cache": 15478,
+      "semantic_zones_identified": 276,
+      "terms_in_zones": 1772,
+      "relations_discovered_by_pattern": 3026,
+      "relations_discovered_by_graph": 13,
+      "relations_discovered_by_zones": 1316,
+      "abstract_concepts_from_zones": 445,
+      "duplicate_relations_removed": 27,
+      "total_relations_discovered": 4773,
+      "pattern_relations": 3026,
+      "graph_relations": 13,
+      "zone_relations": 1316,
+      "abstract_relations": 445,
+      "model_path": "dangvantuan/sentence-camembert-base",
+      "context_window_size": 50,
+      "pattern_min_frequency": 3,
+      "analogy_similarity_threshold": 0.7,
+      "zone_coherence_threshold": 0.75,
+      "abstract_similarity_threshold": 0.65,
+      "family_similarity_threshold": 0.6,
+      "total_contextual_embeddings": 17952
+    },
+    "phase5": {
+      "summary": {
+        "total_input_relations": 8798,
+        "validated_relations": 0,
+        "rejected_relations": 26,
+        "modified_relations": 88,
+        "created_new_terms": 61,
+        "build_duration_seconds": 1066.31,
+        "user_interactions_count": 114
+      },
+      "hierarchy_metrics": {
+        "total_nodes": 2517,
+        "total_relations": 2489,
+        "max_depth": 7,
+        "average_depth": 0.92,
+        "root_terms_count": 1017,
+        "leaf_terms_count": 1799,
+        "avg_parents_per_term": 0.99,
+        "avg_children_per_term": 0.99,
+        "user_validated_relations": 2489,
+        "validation_percentage": 100.0
+      },
+      "validation_details": [
+        {
+          "candidate_parent": "spirituel",
+          "action_taken": "modified",
+          "alternative_term": "Spiritualité",
+          "child_relations_count": 17,
+          "timestamp": "2025-09-03T09:00:18.766980"
+        },
+        {
+          "candidate_parent": "maitre",
+          "action_taken": "modified",
+          "alternative_term": "Maître",
+          "child_relations_count": 12,
+          "timestamp": "2025-09-03T09:00:29.021092"
+        },
+        {
+          "candidate_parent": "instrumental",
+          "action_taken": "modified",
+          "alternative_term": "Musique instrumentale",
+          "child_relations_count": 108,
+          "timestamp": "2025-09-03T09:00:40.367790"
+        },
+        {
+          "candidate_parent": "liturgique",
+          "action_taken": "modified",
+          "alternative_term": "Liturgie",
+          "child_relations_count": 8,
+          "timestamp": "2025-09-03T09:00:53.378948"
+        },
+        {
+          "candidate_parent": "latin",
+          "action_taken": "modified",
+          "alternative_term": "Influence latine",
+          "child_relations_count": 11,
+          "timestamp": "2025-09-03T09:01:05.566392"
+        },
+        {
+          "candidate_parent": "caractere",
+          "action_taken": "rejected",
+          "alternative_term": null,
+          "child_relations_count": 4,
+          "timestamp": "2025-09-03T09:01:17.746719"
+        },
+        {
+          "candidate_parent": "classique",
+          "action_taken": "rejected",
+          "alternative_term": null,
+          "child_relations_count": 3,
+          "timestamp": "2025-09-03T09:01:20.248669"
+        },
+        {
+          "candidate_parent": "femme",
+          "action_taken": "modified",
+          "alternative_term": "Femme",
+          "child_relations_count": 5,
+          "timestamp": "2025-09-03T09:01:21.973973"
+        },
+        {
+          "candidate_parent": "allemand",
+          "action_taken": "modified",
+          "alternative_term": "Influence allemande",
+          "child_relations_count": 8,
+          "timestamp": "2025-09-03T09:01:26.220746"
+        },
+        {
+          "candidate_parent": "italien",
+          "action_taken": "modified",
+          "alternative_term": "Influence italienne",
+          "child_relations_count": 19,
+          "timestamp": "2025-09-03T09:01:40.874823"
+        },
+        {
+          "candidate_parent": "vie",
+          "action_taken": "modified",
+          "alternative_term": "Condition de vie",
+          "child_relations_count": 27,
+          "timestamp": "2025-09-03T09:01:54.438070"
+        },
+        {
+          "candidate_parent": "ecrit",
+          "action_taken": "modified",
+          "alternative_term": "Écrit",
+          "child_relations_count": 7,
+          "timestamp": "2025-09-03T09:02:06.037242"
+        },
+        {
+          "candidate_parent": "style",
+          "action_taken": "modified",
+          "alternative_term": "Style",
+          "child_relations_count": 24,
+          "timestamp": "2025-09-03T09:02:25.677265"
+        },
+        {
+          "candidate_parent": "vibration",
+          "action_taken": "modified",
+          "alternative_term": "Vibration",
+          "child_relations_count": 11,
+          "timestamp": "2025-09-03T09:02:34.500130"
+        },
+        {
+          "candidate_parent": "profane",
+          "action_taken": "modified",
+          "alternative_term": "Musique profane",
+          "child_relations_count": 5,
+          "timestamp": "2025-09-03T09:02:41.502140"
+        },
+        {
+          "candidate_parent": "batterie",
+          "action_taken": "rejected",
+          "alternative_term": null,
+          "child_relations_count": 6,
+          "timestamp": "2025-09-03T09:02:56.299294"
+        },
+        {
+          "candidate_parent": "famille de instrument",
+          "action_taken": "modified",
+          "alternative_term": "Famille d'instruments",
+          "child_relations_count": 3,
+          "timestamp": "2025-09-03T09:03:00.199758"
+        },
+        {
+          "candidate_parent": "joueur",
+          "action_taken": "modified",
+          "alternative_term": "Instrumentiste",
+          "child_relations_count": 55,
+          "timestamp": "2025-09-03T09:03:12.279235"
+        },
+        {
+          "candidate_parent": "vocal",
+          "action_taken": "modified",
+          "alternative_term": "Musique vocale",
+          "child_relations_count": 54,
+          "timestamp": "2025-09-03T09:03:20.298823"
+        },
+        {
+          "candidate_parent": "querelle",
+          "action_taken": "modified",
+          "alternative_term": "Querelle",
+          "child_relations_count": 11,
+          "timestamp": "2025-09-03T09:03:30.474239"
+        },
+        {
+          "candidate_parent": "marine",
+          "action_taken": "rejected",
+          "alternative_term": null,
+          "child_relations_count": 4,
+          "timestamp": "2025-09-03T09:03:36.449320"
+        },
+        {
+          "candidate_parent": "theorie",
+          "action_taken": "modified",
+          "alternative_term": "Théorie",
+          "child_relations_count": 16,
+          "timestamp": "2025-09-03T09:03:38.284115"
+        },
+        {
+          "candidate_parent": "entree",
+          "action_taken": "modified",
+          "alternative_term": "Entrée",
+          "child_relations_count": 8,
+          "timestamp": "2025-09-03T09:03:45.378376"
+        },
+        {
+          "candidate_parent": "scene",
+          "action_taken": "modified",
+          "alternative_term": "Art de la scène",
+          "child_relations_count": 16,
+          "timestamp": "2025-09-03T09:03:51.471033"
+        },
+        {
+          "candidate_parent": "patriotique",
+          "action_taken": "modified",
+          "alternative_term": "Fête patriotique",
+          "child_relations_count": 4,
+          "timestamp": "2025-09-03T09:04:09.686334"
+        },
+        {
+          "candidate_parent": "antique",
+          "action_taken": "modified",
+          "alternative_term": "Influence antique",
+          "child_relations_count": 4,
+          "timestamp": "2025-09-03T09:04:46.951940"
+        },
+        {
+          "candidate_parent": "indication",
+          "action_taken": "modified",
+          "alternative_term": "Indication",
+          "child_relations_count": 5,
+          "timestamp": "2025-09-03T09:04:55.220102"
+        },
+        {
+          "candidate_parent": "ensemble",
+          "action_taken": "modified",
+          "alternative_term": "Ensemble",
+          "child_relations_count": 12,
+          "timestamp": "2025-09-03T09:05:01.585553"
+        },
+        {
+          "candidate_parent": "page",
+          "action_taken": "modified",
+          "alternative_term": "Page",
+          "child_relations_count": 11,
+          "timestamp": "2025-09-03T09:05:07.475093"
+        },
+        {
+          "candidate_parent": "sacr",
+          "action_taken": "rejected",
+          "alternative_term": null,
+          "child_relations_count": 3,
+          "timestamp": "2025-09-03T09:05:10.949109"
+        },
+        {
+          "candidate_parent": "instrument",
+          "action_taken": "modified",
+          "alternative_term": "Instrument de musique",
+          "child_relations_count": 121,
+          "timestamp": "2025-09-03T09:05:35.829897"
+        },
+        {
+          "candidate_parent": "facteur",
+          "action_taken": "modified",
+          "alternative_term": "Facteur d'instruments",
+          "child_relations_count": 15,
+          "timestamp": "2025-09-03T09:05:46.857343"
+        },
+        {
+          "candidate_parent": "collaboration",
+          "action_taken": "modified",
+          "alternative_term": "Collaboration",
+          "child_relations_count": 5,
+          "timestamp": "2025-09-03T09:05:53.315706"
+        },
+        {
+          "candidate_parent": "cour",
+          "action_taken": "modified",
+          "alternative_term": "Cour",
+          "child_relations_count": 16,
+          "timestamp": "2025-09-03T09:06:00.240747"
+        },
+        {
+          "candidate_parent": "jeu",
+          "action_taken": "modified",
+          "alternative_term": "Jeu",
+          "child_relations_count": 37,
+          "timestamp": "2025-09-03T09:06:04.972068"
+        },
+        {
+          "candidate_parent": "regle",
+          "action_taken": "modified",
+          "alternative_term": "Règle",
+          "child_relations_count": 8,
+          "timestamp": "2025-09-03T09:06:08.002821"
+        },
+        {
+          "candidate_parent": "etranger",
+          "action_taken": "rejected",
+          "alternative_term": null,
+          "child_relations_count": 3,
+          "timestamp": "2025-09-03T09:06:12.926689"
+        },
+        {
+          "candidate_parent": "social",
+          "action_taken": "modified",
+          "alternative_term": "Condition de vie",
+          "child_relations_count": 7,
+          "timestamp": "2025-09-03T09:06:14.824539"
+        },
+        {
+          "candidate_parent": "musical",
+          "action_taken": "rejected",
+          "alternative_term": null,
+          "child_relations_count": 66,
+          "timestamp": "2025-09-03T09:06:25.713230"
+        },
+        {
+          "candidate_parent": "salle",
+          "action_taken": "modified",
+          "alternative_term": "Salle",
+          "child_relations_count": 5,
+          "timestamp": "2025-09-03T09:06:27.620593"
+        },
+        {
+          "candidate_parent": "dramatique",
+          "action_taken": "modified",
+          "alternative_term": "Art dramatique",
+          "child_relations_count": 13,
+          "timestamp": "2025-09-03T09:06:31.310952"
+        },
+        {
+          "candidate_parent": "influence",
+          "action_taken": "modified",
+          "alternative_term": "Influence",
+          "child_relations_count": 29,
+          "timestamp": "2025-09-03T09:06:37.816426"
+        },
+        {
+          "candidate_parent": "rite liturgique",
+          "action_taken": "modified",
+          "alternative_term": "Rite liturgique",
+          "child_relations_count": 1,
+          "timestamp": "2025-09-03T09:06:43.266358"
+        },
+        {
+          "candidate_parent": "professeur",
+          "action_taken": "modified",
+          "alternative_term": "Professeur",
+          "child_relations_count": 6,
+          "timestamp": "2025-09-03T09:06:50.541591"
+        },
+        {
+          "candidate_parent": "concerter",
+          "action_taken": "modified",
+          "alternative_term": "Musique concertante",
+          "child_relations_count": 6,
+          "timestamp": "2025-09-03T09:06:58.208353"
+        },
+        {
+          "candidate_parent": "harmonique",
+          "action_taken": "modified",
+          "alternative_term": "Harmonie",
+          "child_relations_count": 9,
+          "timestamp": "2025-09-03T09:07:07.427635"
+        },
+        {
+          "candidate_parent": "psaume",
+          "action_taken": "modified",
+          "alternative_term": "Psaume",
+          "child_relations_count": 23,
+          "timestamp": "2025-09-03T09:07:11.413756"
+        },
+        {
+          "candidate_parent": "privee",
+          "action_taken": "rejected",
+          "alternative_term": null,
+          "child_relations_count": 3,
+          "timestamp": "2025-09-03T09:07:17.089949"
+        },
+        {
+          "candidate_parent": "ordonnance",
+          "action_taken": "modified",
+          "alternative_term": "Ordonnance",
+          "child_relations_count": 6,
+          "timestamp": "2025-09-03T09:07:18.511022"
+        },
+        {
+          "candidate_parent": "sceniqu",
+          "action_taken": "modified",
+          "alternative_term": "Art de la scène",
+          "child_relations_count": 3,
+          "timestamp": "2025-09-03T09:07:28.124120"
+        },
+        {
+          "candidate_parent": "accord",
+          "action_taken": "modified",
+          "alternative_term": "Accord",
+          "child_relations_count": 9,
+          "timestamp": "2025-09-03T09:07:33.796480"
+        },
+        {
+          "candidate_parent": "choregraphiqu",
+          "action_taken": "modified",
+          "alternative_term": "Chorégraphie",
+          "child_relations_count": 3,
+          "timestamp": "2025-09-03T09:07:39.290661"
+        },
+        {
+          "candidate_parent": "temps",
+          "action_taken": "modified",
+          "alternative_term": "Temps liturgique",
+          "child_relations_count": 7,
+          "timestamp": "2025-09-03T09:07:45.301373"
+        },
+        {
+          "candidate_parent": "office",
+          "action_taken": "modified",
+          "alternative_term": "Office liturgique",
+          "child_relations_count": 17,
+          "timestamp": "2025-09-03T09:07:53.622852"
+        },
+        {
+          "candidate_parent": "religieux",
+          "action_taken": "modified",
+          "alternative_term": "Spiritualité",
+          "child_relations_count": 5,
+          "timestamp": "2025-09-03T09:08:03.989542"
+        },
+        {
+          "candidate_parent": "lecture",
+          "action_taken": "rejected",
+          "alternative_term": null,
+          "child_relations_count": 6,
+          "timestamp": "2025-09-03T09:08:11.059452"
+        },
+        {
+          "candidate_parent": "figurer",
+          "action_taken": "modified",
+          "alternative_term": "Figure",
+          "child_relations_count": 22,
+          "timestamp": "2025-09-03T09:08:12.942992"
+        },
+        {
+          "candidate_parent": "vent",
+          "action_taken": "rejected",
+          "alternative_term": null,
+          "child_relations_count": 8,
+          "timestamp": "2025-09-03T09:08:17.554938"
+        },
+        {
+          "candidate_parent": "biblique",
+          "action_taken": "modified",
+          "alternative_term": "Bible",
+          "child_relations_count": 6,
+          "timestamp": "2025-09-03T09:08:19.579210"
+        },
+        {
+          "candidate_parent": "litteraire",
+          "action_taken": "modified",
+          "alternative_term": "Littérature",
+          "child_relations_count": 14,
+          "timestamp": "2025-09-03T09:08:24.442041"
+        },
+        {
+          "candidate_parent": "royal",
+          "action_taken": "modified",
+          "alternative_term": "En lien avec le roi",
+          "child_relations_count": 8,
+          "timestamp": "2025-09-03T09:08:30.684775"
+        },
+        {
+          "candidate_parent": "oeuvre",
+          "action_taken": "modified",
+          "alternative_term": "Oeuvre",
+          "child_relations_count": 34,
+          "timestamp": "2025-09-03T09:08:37.311888"
+        },
+        {
+          "candidate_parent": "texte",
+          "action_taken": "modified",
+          "alternative_term": "Texte",
+          "child_relations_count": 18,
+          "timestamp": "2025-09-03T09:08:40.595390"
+        },
+        {
+          "candidate_parent": "canzone",
+          "action_taken": "modified",
+          "alternative_term": "Canzone",
+          "child_relations_count": 5,
+          "timestamp": "2025-09-03T09:08:44.474793"
+        },
+        {
+          "candidate_parent": "art",
+          "action_taken": "modified",
+          "alternative_term": "Art",
+          "child_relations_count": 3,
+          "timestamp": "2025-09-03T09:08:51.685281"
+        },
+        {
+          "candidate_parent": "prive",
+          "action_taken": "rejected",
+          "alternative_term": null,
+          "child_relations_count": 3,
+          "timestamp": "2025-09-03T09:08:56.089645"
+        },
+        {
+          "candidate_parent": "roi",
+          "action_taken": "modified",
+          "alternative_term": "En lien avec le roi",
+          "child_relations_count": 18,
+          "timestamp": "2025-09-03T09:08:58.309992"
+        },
+        {
+          "candidate_parent": "acte ( document )",
+          "action_taken": "modified",
+          "alternative_term": "Acte (document)",
+          "child_relations_count": 7,
+          "timestamp": "2025-09-03T09:10:13.676733"
+        },
+        {
+          "candidate_parent": "siecle",
+          "action_taken": "modified",
+          "alternative_term": "Regard sur le passé",
+          "child_relations_count": 8,
+          "timestamp": "2025-09-03T09:10:22.715570"
+        },
+        {
+          "candidate_parent": "ouvrage",
+          "action_taken": "modified",
+          "alternative_term": "Ouvrage",
+          "child_relations_count": 10,
+          "timestamp": "2025-09-03T09:10:29.790745"
+        },
+        {
+          "candidate_parent": "saint",
+          "action_taken": "modified",
+          "alternative_term": "Fête religieuse",
+          "child_relations_count": 109,
+          "timestamp": "2025-09-03T09:10:34.919990"
+        },
+        {
+          "candidate_parent": "polyphonique",
+          "action_taken": "modified",
+          "alternative_term": "Polyphonie",
+          "child_relations_count": 3,
+          "timestamp": "2025-09-03T09:10:42.615027"
+        },
+        {
+          "candidate_parent": "commun ( liturgie )",
+          "action_taken": "modified",
+          "alternative_term": "Commun",
+          "child_relations_count": 21,
+          "timestamp": "2025-09-03T09:10:55.225963"
+        },
+        {
+          "candidate_parent": "plain",
+          "action_taken": "modified",
+          "alternative_term": "Plain-chant",
+          "child_relations_count": 6,
+          "timestamp": "2025-09-03T09:11:02.330844"
+        },
+        {
+          "candidate_parent": "chambre",
+          "action_taken": "rejected",
+          "alternative_term": null,
+          "child_relations_count": 3,
+          "timestamp": "2025-09-03T09:11:07.037529"
+        },
+        {
+          "candidate_parent": "musiqu",
+          "action_taken": "rejected",
+          "alternative_term": null,
+          "child_relations_count": 181,
+          "timestamp": "2025-09-03T09:11:09.548287"
+        },
+        {
+          "candidate_parent": "espagnol",
+          "action_taken": "modified",
+          "alternative_term": "Influence espagnole",
+          "child_relations_count": 7,
+          "timestamp": "2025-09-03T09:11:11.211410"
+        },
+        {
+          "candidate_parent": "critique",
+          "action_taken": "modified",
+          "alternative_term": "Critique",
+          "child_relations_count": 7,
+          "timestamp": "2025-09-03T09:11:18.474717"
+        },
+        {
+          "candidate_parent": "jesu",
+          "action_taken": "rejected",
+          "alternative_term": null,
+          "child_relations_count": 4,
+          "timestamp": "2025-09-03T09:11:23.310089"
+        },
+        {
+          "candidate_parent": "expression",
+          "action_taken": "modified",
+          "alternative_term": "Expressivité",
+          "child_relations_count": 3,
+          "timestamp": "2025-09-03T09:11:25.139513"
+        },
+        {
+          "candidate_parent": "commerce",
+          "action_taken": "modified",
+          "alternative_term": "Commerce",
+          "child_relations_count": 15,
+          "timestamp": "2025-09-03T09:11:30.757225"
+        },
+        {
+          "candidate_parent": "concertant",
+          "action_taken": "modified",
+          "alternative_term": "Musique concertante",
+          "child_relations_count": 3,
+          "timestamp": "2025-09-03T09:11:35.254376"
+        },
+        {
+          "candidate_parent": "lyrique",
+          "action_taken": "modified",
+          "alternative_term": "Art lyrique",
+          "child_relations_count": 9,
+          "timestamp": "2025-09-03T09:11:42.344099"
+        },
+        {
+          "candidate_parent": "menetrier",
+          "action_taken": "modified",
+          "alternative_term": "Ménétriers",
+          "child_relations_count": 3,
+          "timestamp": "2025-09-03T09:11:49.799956"
+        },
+        {
+          "candidate_parent": "ambulant",
+          "action_taken": "modified",
+          "alternative_term": "Musique ambulante",
+          "child_relations_count": 4,
+          "timestamp": "2025-09-03T09:11:55.436053"
+        },
+        {
+          "candidate_parent": "theatral",
+          "action_taken": "modified",
+          "alternative_term": "Théâtre",
+          "child_relations_count": 3,
+          "timestamp": "2025-09-03T09:12:01.584022"
+        },
+        {
+          "candidate_parent": "francais",
+          "action_taken": "modified",
+          "alternative_term": "Influence française",
+          "child_relations_count": 8,
+          "timestamp": "2025-09-03T09:12:07.117103"
+        },
+        {
+          "candidate_parent": "musicien",
+          "action_taken": "rejected",
+          "alternative_term": null,
+          "child_relations_count": 5,
+          "timestamp": "2025-09-03T09:12:13.970630"
+        },
+        {
+          "candidate_parent": "bouffon",
+          "action_taken": "modified",
+          "alternative_term": "Bouffon",
+          "child_relations_count": 4,
+          "timestamp": "2025-09-03T09:12:15.516146"
+        },
+        {
+          "candidate_parent": "revolutionnaire",
+          "action_taken": "modified",
+          "alternative_term": "Fête révolutionnaire",
+          "child_relations_count": 5,
+          "timestamp": "2025-09-03T09:12:20.823941"
+        },
+        {
+          "candidate_parent": "amour",
+          "action_taken": "rejected",
+          "alternative_term": null,
+          "child_relations_count": 7,
+          "timestamp": "2025-09-03T09:12:29.424178"
+        },
+        {
+          "candidate_parent": "esprit",
+          "action_taken": "modified",
+          "alternative_term": "Esprit-Saint",
+          "child_relations_count": 4,
+          "timestamp": "2025-09-03T09:12:32.698078"
+        },
+        {
+          "candidate_parent": "france",
+          "action_taken": "rejected",
+          "alternative_term": null,
+          "child_relations_count": 3,
+          "timestamp": "2025-09-03T09:12:41.663832"
+        },
+        {
+          "candidate_parent": "sacre",
+          "action_taken": "rejected",
+          "alternative_term": null,
+          "child_relations_count": 5,
+          "timestamp": "2025-09-03T09:12:43.418668"
+        },
+        {
+          "candidate_parent": "populaire",
+          "action_taken": "modified",
+          "alternative_term": "Fête populaire",
+          "child_relations_count": 7,
+          "timestamp": "2025-09-03T09:12:45.084308"
+        },
+        {
+          "candidate_parent": "mort",
+          "action_taken": "modified",
+          "alternative_term": "Liturgie des morts",
+          "child_relations_count": 5,
+          "timestamp": "2025-09-03T09:12:51.382795"
+        },
+        {
+          "candidate_parent": "concert",
+          "action_taken": "rejected",
+          "alternative_term": null,
+          "child_relations_count": 3,
+          "timestamp": "2025-09-03T09:13:07.205315"
+        },
+        {
+          "candidate_parent": "sacrement",
+          "action_taken": "modified",
+          "alternative_term": "Saint-Sacrement",
+          "child_relations_count": 4,
+          "timestamp": "2025-09-03T09:13:09.112795"
+        },
+        {
+          "candidate_parent": "marchand",
+          "action_taken": "modified",
+          "alternative_term": "Marchand",
+          "child_relations_count": 4,
+          "timestamp": "2025-09-03T09:13:17.441442"
+        },
+        {
+          "candidate_parent": "ecriture",
+          "action_taken": "modified",
+          "alternative_term": "Écriture",
+          "child_relations_count": 40,
+          "timestamp": "2025-09-03T09:13:21.832926"
+        },
+        {
+          "candidate_parent": "heroiqu",
+          "action_taken": "modified",
+          "alternative_term": "Héros",
+          "child_relations_count": 5,
+          "timestamp": "2025-09-03T09:13:28.522796"
+        },
+        {
+          "candidate_parent": "funebre",
+          "action_taken": "modified",
+          "alternative_term": "Liturgie des morts",
+          "child_relations_count": 3,
+          "timestamp": "2025-09-03T09:13:35.555192"
+        },
+        {
+          "candidate_parent": "famille d’ instrument",
+          "action_taken": "modified",
+          "alternative_term": "Famille d'instruments",
+          "child_relations_count": 81,
+          "timestamp": "2025-09-03T09:13:58.856175"
+        },
+        {
+          "candidate_parent": "un",
+          "action_taken": "rejected",
+          "alternative_term": null,
+          "child_relations_count": 9,
+          "timestamp": "2025-09-03T09:14:13.303940"
+        },
+        {
+          "candidate_parent": "maison",
+          "action_taken": "rejected",
+          "alternative_term": null,
+          "child_relations_count": 3,
+          "timestamp": "2025-09-03T09:14:20.876264"
+        },
+        {
+          "candidate_parent": "danser",
+          "action_taken": "modified",
+          "alternative_term": "Danse",
+          "child_relations_count": 3,
+          "timestamp": "2025-09-03T09:14:22.661773"
+        },
+        {
+          "candidate_parent": "plein",
+          "action_taken": "rejected",
+          "alternative_term": null,
+          "child_relations_count": 3,
+          "timestamp": "2025-09-03T09:14:26.631763"
+        },
+        {
+          "candidate_parent": "sonore",
+          "action_taken": "rejected",
+          "alternative_term": null,
+          "child_relations_count": 4,
+          "timestamp": "2025-09-03T09:14:28.141031"
+        },
+        {
+          "candidate_parent": "romance",
+          "action_taken": "modified",
+          "alternative_term": "Romance",
+          "child_relations_count": 5,
+          "timestamp": "2025-09-03T09:14:29.924279"
+        },
+        {
+          "candidate_parent": "corps",
+          "action_taken": "rejected",
+          "alternative_term": null,
+          "child_relations_count": 4,
+          "timestamp": "2025-09-03T09:14:34.826428"
+        },
+        {
+          "candidate_parent": "facture",
+          "action_taken": "modified",
+          "alternative_term": "Facture d'instruments",
+          "child_relations_count": 5,
+          "timestamp": "2025-09-03T09:14:36.765275"
+        },
+        {
+          "candidate_parent": "contre",
+          "action_taken": "rejected",
+          "alternative_term": null,
+          "child_relations_count": 12,
+          "timestamp": "2025-09-03T09:14:57.089274"
+        },
+        {
+          "candidate_parent": "table",
+          "action_taken": "rejected",
+          "alternative_term": null,
+          "child_relations_count": 4,
+          "timestamp": "2025-09-03T09:14:59.599686"
+        },
+        {
+          "candidate_parent": "diffusion",
+          "action_taken": "modified",
+          "alternative_term": "Diffusion",
+          "child_relations_count": 4,
+          "timestamp": "2025-09-03T09:15:01.425216"
+        }
+      ],
+      "quality_indicators": {
+        "completeness_score": 28.29,
+        "consistency_score": 0,
+        "coverage_score": 59.59
+      },
+      "created_terms": [
+        {
+          "uri": "http://data.cmbv.org/vocabulary//d6a5f941-38da-41ea-b662-b91fb06fec4d",
+          "preflabel": "Spiritualité",
+          "created_from": "user_alternative",
+          "timestamp": "2025-09-03T09:00:27.063711"
+        },
+        {
+          "uri": "http://data.cmbv.org/vocabulary//ea06a9a9-0b08-4800-a660-300a3a896c74",
+          "preflabel": "Maître",
+          "created_from": "user_alternative",
+          "timestamp": "2025-09-03T09:00:34.277506"
+        },
+        {
+          "uri": "http://data.cmbv.org/vocabulary//8efe24e5-048d-45a6-afb4-7d5c9d6c8912",
+          "preflabel": "Influence latine",
+          "created_from": "user_alternative",
+          "timestamp": "2025-09-03T09:01:14.973152"
+        },
+        {
+          "uri": "http://data.cmbv.org/vocabulary//401f6425-f45a-4bcb-b46a-88b42945e2fe",
+          "preflabel": "Femme",
+          "created_from": "user_alternative",
+          "timestamp": "2025-09-03T09:01:24.525523"
+        },
+        {
+          "uri": "http://data.cmbv.org/vocabulary//dac8e6e3-3bab-4d1a-95ce-78f508f230dc",
+          "preflabel": "Condition de vie",
+          "created_from": "user_alternative",
+          "timestamp": "2025-09-03T09:02:02.410879"
+        },
+        {
+          "uri": "http://data.cmbv.org/vocabulary//df076382-b02f-46a5-a67d-b13db0dc6ed4",
+          "preflabel": "Écrit",
+          "created_from": "user_alternative",
+          "timestamp": "2025-09-03T09:02:14.819953"
+        },
+        {
+          "uri": "http://data.cmbv.org/vocabulary//b685c66b-84a3-47b6-960d-9ca07c56de02",
+          "preflabel": "Style",
+          "created_from": "user_alternative",
+          "timestamp": "2025-09-03T09:02:32.424278"
+        },
+        {
+          "uri": "http://data.cmbv.org/vocabulary//490c2fed-38ae-4639-8246-0a2ced0d920c",
+          "preflabel": "Vibration",
+          "created_from": "user_alternative",
+          "timestamp": "2025-09-03T09:02:37.497541"
+        },
+        {
+          "uri": "http://data.cmbv.org/vocabulary//51b16886-56d6-41e6-9688-4f7a5e47cf73",
+          "preflabel": "Famille d'instruments",
+          "created_from": "user_alternative",
+          "timestamp": "2025-09-03T09:03:05.201917"
+        },
+        {
+          "uri": "http://data.cmbv.org/vocabulary//81b0d7a5-d73d-4907-aaf3-20982929450f",
+          "preflabel": "Querelle",
+          "created_from": "user_alternative",
+          "timestamp": "2025-09-03T09:03:34.702479"
+        },
+        {
+          "uri": "http://data.cmbv.org/vocabulary//4da69179-74cc-4232-b0eb-fc535818b49e",
+          "preflabel": "Théorie",
+          "created_from": "user_alternative",
+          "timestamp": "2025-09-03T09:03:42.923581"
+        },
+        {
+          "uri": "http://data.cmbv.org/vocabulary//002856b4-1eae-4e98-986a-0f86640a1bdb",
+          "preflabel": "Entrée",
+          "created_from": "user_alternative",
+          "timestamp": "2025-09-03T09:03:48.504549"
+        },
+        {
+          "uri": "http://data.cmbv.org/vocabulary//1ede083f-3e3d-4f71-a430-53839079df68",
+          "preflabel": "Art de la scène",
+          "created_from": "user_alternative",
+          "timestamp": "2025-09-03T09:04:07.795632"
+        },
+        {
+          "uri": "http://data.cmbv.org/vocabulary//9c561aeb-065e-4bd9-b60b-e494e5389ca1",
+          "preflabel": "Fête patriotique",
+          "created_from": "user_alternative",
+          "timestamp": "2025-09-03T09:04:16.702548"
+        },
+        {
+          "uri": "http://data.cmbv.org/vocabulary//4be8c515-96f4-4399-9a73-0fbf48eec05f",
+          "preflabel": "Influence antique",
+          "created_from": "user_alternative",
+          "timestamp": "2025-09-03T09:04:53.546387"
+        },
+        {
+          "uri": "http://data.cmbv.org/vocabulary//271b3143-9662-4195-95e2-285fed5c8212",
+          "preflabel": "Indication",
+          "created_from": "user_alternative",
+          "timestamp": "2025-09-03T09:04:59.902534"
+        },
+        {
+          "uri": "http://data.cmbv.org/vocabulary//3524b10b-0b37-48e2-b338-e47b0b4b47ac",
+          "preflabel": "Ensemble",
+          "created_from": "user_alternative",
+          "timestamp": "2025-09-03T09:05:05.811931"
+        },
+        {
+          "uri": "http://data.cmbv.org/vocabulary//4cfc8817-82d7-4676-9418-9efbd4cb21b0",
+          "preflabel": "Page",
+          "created_from": "user_alternative",
+          "timestamp": "2025-09-03T09:05:09.036068"
+        },
+        {
+          "uri": "http://data.cmbv.org/vocabulary//6978b87c-d9c8-4451-a5f9-06adb1310510",
+          "preflabel": "Facteur d'instruments",
+          "created_from": "user_alternative",
+          "timestamp": "2025-09-03T09:05:51.653463"
+        },
+        {
+          "uri": "http://data.cmbv.org/vocabulary//d0004be5-8ebe-4a6f-a4b0-fba186589ac1",
+          "preflabel": "Collaboration",
+          "created_from": "user_alternative",
+          "timestamp": "2025-09-03T09:05:58.113763"
+        },
+        {
+          "uri": "http://data.cmbv.org/vocabulary//967c6469-170e-4c82-8e65-3bf622c00635",
+          "preflabel": "Cour",
+          "created_from": "user_alternative",
+          "timestamp": "2025-09-03T09:06:02.572407"
+        },
+        {
+          "uri": "http://data.cmbv.org/vocabulary//9bdfc559-1f40-44a8-b554-bcea579ff6b4",
+          "preflabel": "Jeu",
+          "created_from": "user_alternative",
+          "timestamp": "2025-09-03T09:06:06.377269"
+        },
+        {
+          "uri": "http://data.cmbv.org/vocabulary//022c5eae-5d95-4382-ab96-725584a818b7",
+          "preflabel": "Règle",
+          "created_from": "user_alternative",
+          "timestamp": "2025-09-03T09:06:10.218715"
+        },
+        {
+          "uri": "http://data.cmbv.org/vocabulary//f4725500-4898-416d-bdd5-dd86caff75f4",
+          "preflabel": "Salle",
+          "created_from": "user_alternative",
+          "timestamp": "2025-09-03T09:06:29.242957"
+        },
+        {
+          "uri": "http://data.cmbv.org/vocabulary//45cebd18-8d76-4cb2-ad13-35692937588f",
+          "preflabel": "Art dramatique",
+          "created_from": "user_alternative",
+          "timestamp": "2025-09-03T09:06:35.936315"
+        },
+        {
+          "uri": "http://data.cmbv.org/vocabulary//56c19c4a-bfcf-4bb7-8d32-6f1d3ce47b85",
+          "preflabel": "Influence",
+          "created_from": "user_alternative",
+          "timestamp": "2025-09-03T09:06:40.507969"
+        },
+        {
+          "uri": "http://data.cmbv.org/vocabulary//deea012c-f2c8-4444-ba5b-ff6a2fa2b9ed",
+          "preflabel": "Rite liturgique",
+          "created_from": "user_alternative",
+          "timestamp": "2025-09-03T09:06:48.388061"
+        },
+        {
+          "uri": "http://data.cmbv.org/vocabulary//69a6b2c8-dd94-41eb-a9ea-ebb80684ec39",
+          "preflabel": "Professeur",
+          "created_from": "user_alternative",
+          "timestamp": "2025-09-03T09:06:56.158856"
+        },
+        {
+          "uri": "http://data.cmbv.org/vocabulary//b5e15bfa-f31b-4cd8-894e-f92982bd7e67",
+          "preflabel": "Musique concertante",
+          "created_from": "user_alternative",
+          "timestamp": "2025-09-03T09:07:05.633080"
+        },
+        {
+          "uri": "http://data.cmbv.org/vocabulary//4db3a841-9bee-40fe-8e89-b3696ce9d260",
+          "preflabel": "Psaume",
+          "created_from": "user_alternative",
+          "timestamp": "2025-09-03T09:07:14.095987"
+        },
+        {
+          "uri": "http://data.cmbv.org/vocabulary//7fd1eb6d-e6f8-4f88-87cd-bab9b94b3881",
+          "preflabel": "Ordonnance",
+          "created_from": "user_alternative",
+          "timestamp": "2025-09-03T09:07:22.776705"
+        },
+        {
+          "uri": "http://data.cmbv.org/vocabulary//5978c919-bbf4-4d90-abca-4aabc6a19cfe",
+          "preflabel": "Chorégraphie",
+          "created_from": "user_alternative",
+          "timestamp": "2025-09-03T09:07:43.117630"
+        },
+        {
+          "uri": "http://data.cmbv.org/vocabulary//7930f6a1-e79e-4658-a1d5-784ca1cbde03",
+          "preflabel": "Temps liturgique",
+          "created_from": "user_alternative",
+          "timestamp": "2025-09-03T09:07:50.496181"
+        },
+        {
+          "uri": "http://data.cmbv.org/vocabulary//71109ba2-1b21-4276-bcb6-022b3495bd4f",
+          "preflabel": "Figure",
+          "created_from": "user_alternative",
+          "timestamp": "2025-09-03T09:08:15.648805"
+        },
+        {
+          "uri": "http://data.cmbv.org/vocabulary//5e5c7111-65b9-46d2-bf62-92dbbe86191e",
+          "preflabel": "Littérature",
+          "created_from": "user_alternative",
+          "timestamp": "2025-09-03T09:08:29.157545"
+        },
+        {
+          "uri": "http://data.cmbv.org/vocabulary//8a0595d3-ae82-46c3-911f-48bc4e61a2bc",
+          "preflabel": "En lien avec le roi",
+          "created_from": "user_alternative",
+          "timestamp": "2025-09-03T09:08:35.314912"
+        },
+        {
+          "uri": "http://data.cmbv.org/vocabulary//e11f0f63-d7bb-4083-8259-bc9077aa365e",
+          "preflabel": "Oeuvre",
+          "created_from": "user_alternative",
+          "timestamp": "2025-09-03T09:08:38.970032"
+        },
+        {
+          "uri": "http://data.cmbv.org/vocabulary//9a9e475d-3906-4eea-9864-cf4575613d8c",
+          "preflabel": "Texte",
+          "created_from": "user_alternative",
+          "timestamp": "2025-09-03T09:08:42.412860"
+        },
+        {
+          "uri": "http://data.cmbv.org/vocabulary//825d69dc-eb50-4f61-a074-289bbe7eb99e",
+          "preflabel": "Canzone",
+          "created_from": "user_alternative",
+          "timestamp": "2025-09-03T09:08:50.221516"
+        },
+        {
+          "uri": "http://data.cmbv.org/vocabulary//8779b5eb-7fe2-48ae-9225-d8c9d6b2df49",
+          "preflabel": "Acte (document)",
+          "created_from": "user_alternative",
+          "timestamp": "2025-09-03T09:10:20.662067"
+        },
+        {
+          "uri": "http://data.cmbv.org/vocabulary//92c39d1e-6e47-4b1b-8088-64dc389cf4c2",
+          "preflabel": "Regard sur le passé",
+          "created_from": "user_alternative",
+          "timestamp": "2025-09-03T09:10:27.753005"
+        },
+        {
+          "uri": "http://data.cmbv.org/vocabulary//a295c4f2-c1ef-4dd5-afb3-cc5e909db438",
+          "preflabel": "Ouvrage",
+          "created_from": "user_alternative",
+          "timestamp": "2025-09-03T09:10:32.700591"
+        },
+        {
+          "uri": "http://data.cmbv.org/vocabulary//3df6ff56-da11-496b-8527-9b064237d036",
+          "preflabel": "Fête religieuse",
+          "created_from": "user_alternative",
+          "timestamp": "2025-09-03T09:10:40.221679"
+        },
+        {
+          "uri": "http://data.cmbv.org/vocabulary//c4a3d59f-44dd-4331-bad4-c2d60572bec6",
+          "preflabel": "Critique",
+          "created_from": "user_alternative",
+          "timestamp": "2025-09-03T09:11:20.906598"
+        },
+        {
+          "uri": "http://data.cmbv.org/vocabulary//fac9588d-088a-4889-9fe6-cb5df8ed1656",
+          "preflabel": "Expressivité",
+          "created_from": "user_alternative",
+          "timestamp": "2025-09-03T09:11:28.937446"
+        },
+        {
+          "uri": "http://data.cmbv.org/vocabulary//dbe47cc7-90a6-48eb-9e32-65dcb8bd9e1d",
+          "preflabel": "Commerce",
+          "created_from": "user_alternative",
+          "timestamp": "2025-09-03T09:11:32.974140"
+        },
+        {
+          "uri": "http://data.cmbv.org/vocabulary//ca5a8a6e-4836-48da-802e-701f9aef4b22",
+          "preflabel": "Art lyrique",
+          "created_from": "user_alternative",
+          "timestamp": "2025-09-03T09:11:46.961774"
+        },
+        {
+          "uri": "http://data.cmbv.org/vocabulary//3bed3488-5d31-4c6a-99a2-d7f90244667f",
+          "preflabel": "Ménétriers",
+          "created_from": "user_alternative",
+          "timestamp": "2025-09-03T09:11:52.973145"
+        },
+        {
+          "uri": "http://data.cmbv.org/vocabulary//f3d77b54-a91a-4a64-9b80-399e1ffb7eac",
+          "preflabel": "Musique ambulante",
+          "created_from": "user_alternative",
+          "timestamp": "2025-09-03T09:12:00.205386"
+        },
+        {
+          "uri": "http://data.cmbv.org/vocabulary//07b62106-f70d-4b94-84e6-6bdfa54370a9",
+          "preflabel": "Théâtre",
+          "created_from": "user_alternative",
+          "timestamp": "2025-09-03T09:12:04.902606"
+        },
+        {
+          "uri": "http://data.cmbv.org/vocabulary//b5501523-5d38-4152-b08d-d9ec2d480066",
+          "preflabel": "Influence française",
+          "created_from": "user_alternative",
+          "timestamp": "2025-09-03T09:12:11.810534"
+        },
+        {
+          "uri": "http://data.cmbv.org/vocabulary//3652ce13-e3e7-408c-a2ad-0c5f3c065625",
+          "preflabel": "Bouffon",
+          "created_from": "user_alternative",
+          "timestamp": "2025-09-03T09:12:17.539135"
+        },
+        {
+          "uri": "http://data.cmbv.org/vocabulary//e64c634d-9163-4525-9b12-87458aa39bf4",
+          "preflabel": "Fête révolutionnaire",
+          "created_from": "user_alternative",
+          "timestamp": "2025-09-03T09:12:25.860311"
+        },
+        {
+          "uri": "http://data.cmbv.org/vocabulary//d161486a-bf60-4fa1-a615-dae781f52c48",
+          "preflabel": "Fête populaire",
+          "created_from": "user_alternative",
+          "timestamp": "2025-09-03T09:12:49.693939"
+        },
+        {
+          "uri": "http://data.cmbv.org/vocabulary//b2fd1895-a608-44e3-be09-2ccd599304f4",
+          "preflabel": "Saint-Sacrement",
+          "created_from": "user_alternative",
+          "timestamp": "2025-09-03T09:13:15.639590"
+        },
+        {
+          "uri": "http://data.cmbv.org/vocabulary//73a8be6b-ee77-42b4-a7c8-11cdd0f0fd00",
+          "preflabel": "Marchand",
+          "created_from": "user_alternative",
+          "timestamp": "2025-09-03T09:13:19.908892"
+        },
+        {
+          "uri": "http://data.cmbv.org/vocabulary//dfd6ab59-070a-4d27-a6b4-08cccc37f2e5",
+          "preflabel": "Écriture",
+          "created_from": "user_alternative",
+          "timestamp": "2025-09-03T09:13:27.013965"
+        },
+        {
+          "uri": "http://data.cmbv.org/vocabulary//3fb71cc9-d967-40f0-86d9-89a98b5fcc8c",
+          "preflabel": "Héros",
+          "created_from": "user_alternative",
+          "timestamp": "2025-09-03T09:13:31.406487"
+        },
+        {
+          "uri": "http://data.cmbv.org/vocabulary//70c558e1-2cfc-485c-962d-649866f27897",
+          "preflabel": "Romance",
+          "created_from": "user_alternative",
+          "timestamp": "2025-09-03T09:14:31.938101"
+        },
+        {
+          "uri": "http://data.cmbv.org/vocabulary//4de5cb6d-ca4b-4d3c-9d9c-20eb05452ac5",
+          "preflabel": "Facture d'instruments",
+          "created_from": "user_alternative",
+          "timestamp": "2025-09-03T09:14:45.578687"
+        },
+        {
+          "uri": "http://data.cmbv.org/vocabulary//600129c3-048c-4312-89f6-ef0458ec664b",
+          "preflabel": "Diffusion",
+          "created_from": "user_alternative",
+          "timestamp": "2025-09-03T09:15:04.417312"
+        }
+      ],
+      "build_timestamp": "2025-09-03T09:15:06.248097",
+      "configuration_used": {
+        "max_parents": 3,
+        "min_confidence_threshold": 0.1,
+        "transitive_reduction_enabled": true,
+        "cycle_detection_enabled": true
+      }
+    },
+    "phase6": {
+      "transitive_relations_removed": 2,
+      "cycles_detected": 111,
+      "cycles_resolved": 111,
+      "poly_hierarchies_truncated": 34,
+      "nodes_processed": 2517,
+      "new_uris_added": 2881,
+      "relations_before_optimization": 2489,
+      "relations_after_optimization": 2351
+    },
+    "phase7": {
+      "files_generated": 3,
+      "tsv_generated": true,
+      "xml_generated": true,
+      "html_generated": true,
+      "total_concepts_exported": 2517,
+      "output_directory": "output"
+    }
+  },
+  "summary": {
+    "total_execution_time": null,
+    "phases_completed": [
+      "phase1",
+      "phase2",
+      "phase3",
+      "phase4",
+      "phase5",
+      "phase6",
+      "phase7"
+    ],
+    "phases_with_errors": [],
+    "key_metrics": {
+      "initial_terms": 2456,
+      "final_concepts": 2517,
+      "files_generated": 3,
+      "pipeline_success": true
+    }
+  }
+}

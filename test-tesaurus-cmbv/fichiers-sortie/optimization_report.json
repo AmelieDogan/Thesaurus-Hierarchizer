@@ -1,0 +1,39 @@
+{
+    "optimization_summary": {
+        "nodes_processed": 2517,
+        "relations_before": 2489,
+        "relations_after": 2351,
+        "relations_removed": 138,
+        "reduction_percentage": 5.54
+    },
+    "transitive_optimization": {
+        "transitive_relations_removed": 2
+    },
+    "cycle_resolution": {
+        "cycles_detected": 111,
+        "cycles_resolved": 111
+    },
+    "poly_hierarchy_validation": {
+        "max_parents_allowed": 3,
+        "nodes_with_excess_parents": 34
+    },
+    "dataframe_enrichment": {
+        "new_uris_added": 2881,
+        "enrichment_status": "Success"
+    },
+    "quality_metrics": {
+        "optimization_efficiency": 0.08,
+        "hierarchy_health": "Good",
+        "dataframe_completeness": 114.46
+    },
+    "integrity_validation": {
+        "total_nodes": 2517,
+        "orphan_nodes": 736,
+        "root_nodes": 330,
+        "leaf_nodes": 1108,
+        "integrity_issues": [],
+        "max_depth": 9,
+        "average_children_per_node": 0.93,
+        "average_parents_per_node": 0.93
+    }
+}
