@@ -3,13 +3,7 @@ Module de prétraitement des données de thésaurus - Phase 1.
 
 Ce module contient la classe principale pour le nettoyage et la préparation
 des données SKOS en vue de la hiérarchisation automatique.
-
-.. moduleauthor:: Votre Nom <email@example.com>
-.. versionadded:: 1.0
 """
-
-__version__ = "1.0.0"
-__author__ = "Amélie Dogan"
 
 import pandas as pd
 import re
@@ -177,16 +171,16 @@ class ThesaurusDataProcessor:
         # L'OutputGenerator devra gérer le regroupement pour la sortie finale "1 ligne par prefLabel".
         df = self.explode_altlabels(df)
         
+        self.processed_data = df
+        logger.info("Preprocessing terminé avec succès")
+
         # Étape 8 : Calcul des statistiques
-        stats = self.get_statistics(df)
+        stats = self.get_statistics()
         
         # Affichage des statistiques
         logger.info("Statistiques finales :")
         for key, value in stats.items():
             logger.info(f"  {key}: {value}")
-        
-        self.processed_data = df
-        logger.info("Preprocessing terminé avec succès")
         
         return df, lexical_indexes, all_broader_relations
 
@@ -235,7 +229,13 @@ class ThesaurusDataProcessor:
             Exception: Si le fichier ne peut pas être lu ou ne contient pas les colonnes requises
         """
         try:
-            df = pd.read_csv(self.tsv_file_path, sep='\t', encoding='utf-8')
+            df = pd.read_csv(
+                self.tsv_file_path, 
+                sep='\t', 
+                encoding='utf-8',
+                na_values=['', 'NaN', 'NULL'],  # Définir explicitement ce qui est NaN
+                keep_default_na=False  # Ne pas utiliser les valeurs par défaut pandas
+            )
             logger.info(f"Données chargées : {len(df)} lignes")
             
             # Vérification des colonnes requises
@@ -628,19 +628,41 @@ class ThesaurusDataProcessor:
             top_frequent = broader_counter.most_common(5)
             logger.info(f"  - Top 5 termes broader fréquents : {top_frequent}")
     
-    def get_statistics(self, df: pd.DataFrame) -> Dict[str, Any]:
+    def get_statistics(self) -> Dict[str, Any]:
         """
-        Calcule et retourne des statistiques sur le DataFrame prétraité.
+        Retourne les statistiques de la Phase 1 après traitement.
+        Cette méthode doit être appelée après preprocess_data().
+        
+        Returns:
+            Dict contenant les statistiques de la phase 1
         """
+        if self.processed_data is None:
+            logger.warning("Aucune donnée traitée disponible. Exécutez d'abord preprocess_data()")
+            return {}
+    
+        # Calculer les statistiques basées sur les données traitées
+        df = self.processed_data
+        
         stats = {
             'total_terms': len(df),
-            'terms_with_definitions': df['skos:definition'].astype(bool).sum(),
-            'terms_with_altlabels': df['skos:altLabel'].astype(bool).sum(),
+            'terms_with_definitions': df['skos:definition'].notna().sum(),
+            'terms_with_altlabels': df['skos:altLabel'].notna().sum(),
             'total_existing_broader_relations': len(self.existing_broader_relations),
+            'existing_broader_with_resolved_uris': len([r for r in self.existing_broader_relations if r['parent_uri']]),
+            'existing_broader_unresolved': len([r for r in self.existing_broader_relations if not r['parent_uri']]),
             'total_preflabel_broader_relations': len(self.preflabel_broader_relations),
+            'preflabel_broader_existing_parents': len([r for r in self.preflabel_broader_relations if r['type'] == 'existing_parent']),
+            'preflabel_broader_candidate_parents': len([r for r in self.preflabel_broader_relations if r['type'] == 'candidate_parent']),
             'total_candidate_parents_detected': len(self.candidate_parents),
-            'terms_with_broader_from_preflabel': len([r for r in self.preflabel_broader_relations if r])
+            'terms_with_broader_from_preflabel': len([r for r in self.preflabel_broader_relations if r]),
+            'uris_generated': len([row for _, row in df.iterrows() if row['URI'].startswith(self.uri_base)]),
+            'average_word_frequency': sum(self.word_frequency.values()) / len(self.word_frequency) if self.word_frequency else 0,
+            'top_candidate_parents': list(self.word_frequency.most_common(5)),
+            'lexical_indexes_created': len(self.lexical_indexes),
+            'preflabel_to_uri_mappings': len(self.lexical_indexes.get('preflabel_to_uri', {})),
+            'altlabel_to_uri_mappings': len(self.lexical_indexes.get('altlabel_to_uri', {})),
         }
+        
         return stats
 
     def save_processed_data(self, output_path: str, df: pd.DataFrame = None) -> None:

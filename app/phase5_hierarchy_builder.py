@@ -499,11 +499,7 @@ class HierarchyBuilder:
         elif choice == 'M':  # Modifier
             new_term = input(f"🔄 Nouveau terme pour le groupe '{normalized_term}' : ").strip()
             if new_term:
-                new_uri = self._get_new_uri(new_term)
-                for rel in group_relations:
-                    rel['parent_uri'] = new_uri
-                    rel['parent'] = new_term
-                    validated_relations.append(rel)
+                validated_relations = self._handle_alternative_term(new_term, group_relations)
                 print(f"✏️ Groupe '{normalized_term}' renommé en '{new_term}' ({len(validated_relations)} relations)")
                 self.validation_log.append({
                     'candidate_parent': normalized_term,

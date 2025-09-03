@@ -1,30 +1,36 @@
 # Thesaurus-Hierarchizer
 
-> Projet en cours de développement.
-
-## Un framework pour la classification hiérarchique automatique de concepts de thésaurus spécialisés
+## Un prototype de pipeline pour la classification hiérarchique semi-automatique de concepts de thésaurus
 
 [![Python 3.8+](https://img.shields.io/badge/python-3.8+-blue.svg)](https://www.python.org/downloads/)
-[![CC BY-NC-SA 4.0](https://img.shields.io/badge/CC_BY_NC_SA-4.0-green.svg)](https://creativecommons.org/licenses/by-nc-sa/4.0/)
 
-Ce projet propose une architecture intégrée pour structurer automatiquement des thésaurus spécialisés en français, en combinant techniques d'embeddings, analyse terminologique, et méthodes basées sur les graphes.
+Ce projet est un prototype de pipeline de traitement pour la hiérarchisation semi-automatique d'un thésaurus. Développé en Python, il est conçu pour analyser des données SKOS (provenant de fichiers TSV) et enrichir leurs relations hiérarchiques de manière intelligente.
 
-## Fonctionnalités
+Le pipeline combine plusieurs méthodes, allant de la détection de patterns lexicaux à l'analyse sémantique, pour identifier et proposer de nouvelles relations skos:broader et skos:narrower.
 
-- **Génération d'embeddings** adaptés au domaine spécialisé français
-- **Extraction de relations hiérarchiques** par patrons linguistiques
-- **Clustering hiérarchique** avec contraintes basées sur les relations extraites
-- **Analyse de graphe** pour identifier les niveaux conceptuels
-- **Raffinement de la hiérarchie** pour assurer la cohérence taxonomique
-- **Visualisation interactive** des hiérarchies et des relations conceptuelles
-- **Évaluation multi-critères** des taxonomies générées
+## Vue d'ensemble des phases
 
-## Prérequis
+Le pipeline est divisé en sept phases distinctes, chacune gérée par un module spécifique :
 
-- Python 3.8+
-- Dépendances listées dans `requirements.txt`
+**phase1_data_processor.py:** Prétraitement et nettoyage des données brutes du thésaurus. Cette phase normalise les labels, gère les URIs et extrait les relations existantes pour les préparer à l'analyse.
+
+**phase2_pattern_detector.py:** Détection de relations basées sur des patterns lexicaux (ex. : "flûte à bec" -> "flûte").
+
+**phase3_similarity_analyzer.py:** Analyse de la similarité lexicale pour trouver des relations entre des termes proches (ex. : via le coefficient de Jaccard).
+
+**phase4_contextual_embedding_analyzer.py:** Utilisation de modèles d'embeddings pour découvrir des relations par similarité sémantique, en s'appuyant sur des analogies existantes.
+
+**phase5_hierarchy_builder.py:** Construction de la hiérarchie finale en consolidant toutes les relations proposées, en résolvant les conflits et en gérant la validation semi-automatique.
+
+**phase6_hierarchy_optimizer.py:** Optimisation de la hiérarchie en détectant et en éliminant les redondances transitives et les cycles.
+
+**phase7_output_generator.py:** Génération des fichiers de sortie finaux (TSV enrichi, XML RDF/SKOS) et d'un rapport de synthèse.
 
 ## Installation
+
+Pour faire fonctionner ce projet, suivez ces étapes :
+
+Clonez le dépôt :
 
 ```bash
 # Cloner le dépôt
@@ -39,80 +45,38 @@ env\Scripts\activate  # Sur Windows
 
 # Installer les dépendances
 pip install -r requirements.txt
-
-# Installation en mode développement (optionnel)
-pip install -e .
 ```
 
-## Structure du projet
+## Exécution standard
 
-```
-thesaurus-hierarchizer/
-│
-├── data/                   # Données et ressources
-├── config/                 # Fichiers de configuration
-├── notebooks/              # Notebooks d'exploration
-├── src/                    # Code source du projet
-│   ├── data/               # Gestion des données
-│   ├── embeddings/         # Génération d'embeddings
-│   ├── extraction/         # Extraction de relations
-│   ├── clustering/         # Algorithmes de clustering
-│   ├── graph/              # Modélisation et analyse de graphes
-│   ├── refinement/         # Raffinement de la hiérarchie
-│   ├── visualization/      # Visualisation des résultats
-│   ├── evaluation/         # Évaluation des résultats
-│   └── pipeline/           # Orchestration du processus
-│
-└── tests/                  # Tests unitaires et d'intégration
+Lancez le pipeline en spécifiant le chemin de votre fichier d'entrée TSV.
+
+```bash
+python main.py --input chemin/vers/votre_fichier.tsv
 ```
 
-## Architecture
+Option de la ligne de commande :
 
-Le projet suit une architecture en trois phases principales:
+```--input``` (obligatoire) : Chemin du fichier TSV contenant le thésaurus.
 
-1. **Phase d'initialisation:**
-   - Génération d'embeddings spécifiques au domaine
-   - Extraction de relations candidates par patterns linguistiques
+Exemples d'utilisation avec un fichier spécifique :
 
-2. **Phase de structuration:**
-   - Clustering hiérarchique contraint par les relations extraites
-   - Construction d'un graphe de concepts avec pondération multiple
+```bash
+python main.py --input data/thesaurus.tsv 
+```
 
-3. **Phase de raffinement:**
-   - Validation par inférence logique
-   - Détection et résolution des incohérences
-   - Enrichissement par sources externes
+## Fichiers de sortie
 
-## Cas d'utilisation
+Une fois le pipeline terminé, les fichiers suivants sont générés dans le dossier de sortie configuré :
 
-Ce framework est particulièrement adapté pour:
-- Thésaurus spécialisés en français nécessitant une structuration hiérarchique
-- Domaines techniques avec terminologie précise et définitions formelles
-- Création ou refonte de taxonomies pour l'organisation de connaissances
-- Enrichissement de systèmes d'information avec des relations sémantiques
+```thesaurus_enriched.tsv``` : Le thésaurus original enrichi avec les nouvelles relations.
 
-## Évaluation
+```thesaurus_hierarchy.xml``` : La hiérarchie finale au format SKOS RDF/XML.
 
-Le module d'évaluation permet de mesurer la qualité des hiérarchies générées selon plusieurs critères:
-- Cohérence taxonomique
-- Profondeur et équilibre de la hiérarchie
-- Comparaison avec des taxonomies de référence
-- Pertinence sémantique des relations parent-enfant
+```rapport_pipeline.html``` : Un rapport détaillé présentant les statistiques, les relations découvertes et la qualité du traitement.
+
+Ce rapport est un excellent outil pour comprendre les résultats et évaluer la performance du pipeline sur vos données.
 
 ## Contribution
 
-Les contributions sont les bienvenues ! Pour contribuer:
-
-1. Forkez le dépôt
-2. Créez une branche (`git checkout -b feature/nouvelle-fonctionnalite`)
-3. Commitez vos changements (`git commit -m 'Ajout de fonctionnalité X'`)
-4. Poussez vers la branche (`git push origin feature/nouvelle-fonctionnalite`)
-5. Ouvrez une Pull Request
-
-## Licence
-
-Ce projet est sous licence CC BY-NC-SA 4.0 - voir le fichier [LICENSE](https://creativecommons.org/licenses/by-nc-sa/4.0/) pour plus de détails.
-
-## Contact
-
-Pour toute question, suggestion ou collaboration, n'hésitez pas à ouvrir une issue ou à me contacter directement.
+Les contributions, suggestions et retours sont les bienvenus ! N'hésitez pas à ouvrir une issue ou à soumettre une pull request pour améliorer ce projet.

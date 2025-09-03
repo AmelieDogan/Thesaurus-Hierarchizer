@@ -4,6 +4,9 @@ from typing import List, Dict, Tuple, Any
 from collections import Counter
 import json
 import os
+import datetime
+import json
+from pathlib import Path
 
 from .config import load_default_config
 
@@ -21,17 +24,16 @@ from .phase7_output_generator import OutputGenerator
 
 class ThesaurusHierarchyBuilder:
     def __init__(self,
-                 tsv_file_path: str,
-                 config: Dict[str, Any] = None):
+                 tsv_file_path: str):
         """
-        Initialise l’orchestrateur principal.
+        Initialise l'orchestrateur principal.
 
         Args:
             tsv_file_path: Chemin vers le fichier TSV du thésaurus
             config: Configuration personnalisée (facultatif)
         """
         self.tsv_file_path = tsv_file_path
-        self.config = config or load_default_config() # Load default config if none provided
+        self.config = load_default_config()
 
         logger.info("Initialisation de l'orchestrateur principal")
         
@@ -60,19 +62,30 @@ class ThesaurusHierarchyBuilder:
             family_similarity_threshold=self.config["family_similarity_threshold"]
         )
 
+        # Initialisation du composant Phase 6
+        self.hierarchy_optimizer = HierarchyOptimizer(
+            max_parents_per_node=self.config.get("max_parents_per_node", 3),
+            logger=logger
+        )
+
         logger.info("Composants de l'orchestrateur initialisés.")
 
-    def run_phase1_data_preparation(self) -> Tuple[pd.DataFrame, Dict[str, Any]]:
+    def run_phase1_data_preparation(self) -> Tuple[pd.DataFrame, Dict[str, Any], List[Dict[str, Any]]]:
         """
         Exécute la Phase 1 : préparation des données.
         
         Returns:
-            Tuple: (DataFrame des données préparées, Index lexicaux)
+            Tuple: (DataFrame des données préparées, Index lexicaux, Relations détectées)
         """
         logger.info("Phase 1 : Préparation des données")
-        df, lexical_indexes = self.data_processor.preprocess_data()
+        
+        # Exécuter le preprocessing
+        df, lexical_indexes, broader_relations = self.data_processor.preprocess_data()
+        
+        # Récupérer les statistiques après traitement (comme les autres phases)
         self.stats['phase1'] = self.data_processor.get_statistics()
-        return df, lexical_indexes
+        
+        return df, lexical_indexes, broader_relations
 
     def run_phase2_pattern_detection(self, 
                                      df: pd.DataFrame, 
@@ -130,6 +143,275 @@ class ThesaurusHierarchyBuilder:
         self.stats['phase4'] = self.semantic_embedding_analyzer.get_statistics()
         return deduplicated_relations, semantic_zones, contextes_enrichis
 
+    def run_phase5_hierarchy_building(self, 
+                                      all_relations_raw: List[Dict[str, Any]], 
+                                      lexical_indexes: Dict[str, Any]) -> Tuple[Dict[str, Any], Dict[str, Any], Dict[str, Any]]:
+        """
+        Exécute la Phase 5 : construction de la hiérarchie.
+        
+        Args:
+            all_relations_raw: Liste de toutes les relations brutes.
+            lexical_indexes: Index lexicaux.
+            
+        Returns:
+            Tuple: (hiérarchie, index enrichis, rapport de construction)
+        """
+        logger.info("Phase 5 : Construction de la hiérarchie")
+        
+        builder = HierarchyBuilder(
+            lexical_indexes=lexical_indexes,
+            uri_base=self.config["uri_base"]
+        )
+        
+        hierarchy, enriched_indexes, report = builder.build_hierarchy(all_relations_raw)
+        self.stats['phase5'] = report
+        
+        return hierarchy, enriched_indexes, report
+
+    def run_phase6_hierarchy_optimization(self, 
+                                          df: pd.DataFrame,
+                                          hierarchy: Dict[str, Any], 
+                                          enriched_indexes: Dict[str, Any]) -> Tuple[Dict[str, Any], Dict[str, Any]]:
+        """
+        Exécute la Phase 6 : optimisation hiérarchique.
+        
+        Args:
+            hierarchy: Structure hiérarchique à optimiser.
+            enriched_indexes: Index enrichis des concepts.
+            
+        Returns:
+            Tuple: (hiérarchie optimisée, rapport d'optimisation)
+        """
+        logger.info("Phase 6 : Optimisation hiérarchique")
+        
+        df, optimized_hierarchy, optimization_report = self.hierarchy_optimizer.optimize_hierarchy(
+            df, hierarchy, enriched_indexes
+        )
+        
+        self.stats['phase6'] = self.hierarchy_optimizer.get_statistics()
+        
+        # Validation de l'intégrité après optimisation
+        integrity_report = self.hierarchy_optimizer.validate_hierarchy_integrity(optimized_hierarchy)
+        logger.info(f"Validation d'intégrité : {integrity_report['total_nodes']} nœuds, "
+                   f"{len(integrity_report['integrity_issues'])} problèmes détectés")
+        
+        # Ajouter le rapport d'intégrité au rapport d'optimisation
+        optimization_report['integrity_validation'] = integrity_report
+        
+        return df, optimized_hierarchy, optimization_report
+    
+    def run_phase7_output_generation(self,
+                                    df: pd.DataFrame,
+                                    optimized_hierarchy: Dict[str, Any], 
+                                    enriched_indexes: Dict[str, Any]) -> Dict[str, str]:
+        """
+        Exécute la Phase 7 : génération des sorties finales.
+        
+        Cette phase génère trois types de sorties :
+        1. Fichier TSV SKOS enrichi avec hiérarchie optimisée
+        2. Fichier XML RDF/SKOS standard
+        3. Rapport HTML de synthèse du pipeline complet
+        
+        Args:
+            df: Dataframe avec les informations d'origine
+            optimized_hierarchy: Hiérarchie optimisée issue de la phase 6
+            enriched_indexes: Index enrichis avec correspondances URI <-> données originales
+            
+        Returns:
+            Dictionnaire des chemins des fichiers générés :
+            {"tsv": path, "xml": path, "html": path}
+            
+        Raises:
+            Exception: En cas d'erreur lors de la génération des sorties
+        """
+        logger.info("=== DÉMARRAGE PHASE 7 : GÉNÉRATION DES SORTIES ===")
+        
+        try:
+            # Validation des données d'entrée
+            self._validate_phase7_inputs(optimized_hierarchy, enriched_indexes)
+            
+            # Initialisation du générateur de sorties
+            output_gen = OutputGenerator(self.config, logger)
+            
+            # Récupération du DataFrame traité (phase 1) pour les données originales
+            processed_dataframe = df
+            if processed_dataframe.empty:
+                logger.warning("DataFrame non disponible, utilisation des index enrichis uniquement")
+            
+            # Génération de toutes les sorties
+            logger.info("Génération des fichiers de sortie...")
+            output_files = output_gen.generate_all_outputs(
+                optimized_hierarchy=optimized_hierarchy,
+                enriched_indexes=enriched_indexes,
+                processed_dataframe=processed_dataframe,
+                pipeline_stats=self.stats
+            )
+            
+            # Mise à jour des statistiques de la phase 7
+            self.stats["phase7"] = {
+                "files_generated": len(output_files),
+                "tsv_generated": "tsv" in output_files,
+                "xml_generated": "xml" in output_files,
+                "html_generated": "html" in output_files,
+                "total_concepts_exported": len(optimized_hierarchy.get("nodes", {})),
+                "output_directory": str(self.config["output_dir"])
+            }
+            
+            # Log des résultats
+            logger.info("Phase 7 terminée avec succès")
+            logger.info(f"Fichiers générés :")
+            for file_type, file_path in output_files.items():
+                logger.info(f"  - {file_type.upper()}: {file_path}")
+            
+            # Sauvegarde des statistiques finales
+            self._save_final_pipeline_stats()
+            
+            return output_files
+            
+        except Exception as e:
+            logger.error(f"Erreur lors de la phase 7 : {str(e)}")
+            # Mise à jour des stats d'erreur
+            self.stats["phase7"] = {
+                "error": str(e),
+                "files_generated": 0,
+                "status": "failed"
+            }
+            raise Exception(f"Échec de la phase 7 - Génération des sorties : {str(e)}")
+
+    def _validate_phase7_inputs(self, 
+                            optimized_hierarchy: Dict[str, Any], 
+                            enriched_indexes: Dict[str, Any]) -> None:
+        """
+        Valide les données d'entrée de la phase 7.
+        
+        Args:
+            optimized_hierarchy: Hiérarchie optimisée à valider
+            enriched_indexes: Index enrichis à valider
+            
+        Raises:
+            ValueError: Si les données d'entrée sont invalides
+        """
+        # Validation de la hiérarchie optimisée
+        if not optimized_hierarchy:
+            raise ValueError("optimized_hierarchy ne peut pas être vide")
+        
+        if "nodes" not in optimized_hierarchy:
+            raise ValueError("optimized_hierarchy doit contenir une clé 'nodes'")
+        
+        nodes = optimized_hierarchy["nodes"]
+        if not isinstance(nodes, dict):
+            raise ValueError("optimized_hierarchy['nodes'] doit être un dictionnaire")
+        
+        if len(nodes) == 0:
+            raise ValueError("Aucun nœud trouvé dans optimized_hierarchy")
+        
+        # Validation basique de la structure des nœuds
+        sample_node_uri = next(iter(nodes.keys()))
+        sample_node = nodes[sample_node_uri]
+        
+        required_node_fields = ["preflabel", "uri"]
+        for field in required_node_fields:
+            if field not in sample_node:
+                logger.warning(f"Champ '{field}' manquant dans les nœuds de la hiérarchie")
+        
+        # Validation des index enrichis
+        if not enriched_indexes:
+            logger.warning("enriched_indexes est vide, utilisation des données de la hiérarchie uniquement")
+        else:
+            # Vérification de la présence des index attendus
+            expected_indexes = ["preflabel_to_uri", "uri_to_preflabel"]
+            for index_name in expected_indexes:
+                if index_name not in enriched_indexes:
+                    logger.warning(f"Index '{index_name}' manquant dans enriched_indexes")
+        
+        # Validation de la configuration
+        required_config = ["output_dir", "uri_base"]
+        for config_key in required_config:
+            if config_key not in self.config:
+                raise ValueError(f"Configuration manquante : '{config_key}'")
+        
+        logger.info(f"Validation réussie : {len(nodes)} nœuds à traiter")
+
+    def _save_final_pipeline_stats(self) -> None:
+        """
+        Sauvegarde les statistiques finales du pipeline dans un fichier JSON.
+        
+        Crée un fichier 'pipeline_statistics.json' dans le répertoire de sortie
+        avec toutes les statistiques cumulées du pipeline.
+        """
+            
+        # Préparation des statistiques finales
+        final_stats = {
+            "pipeline_execution": {
+                "start_time": getattr(self, 'pipeline_start_time', None),
+                "end_time": datetime.datetime.now().isoformat(),
+                "total_phases": 7,
+                "completed_phases": len([k for k in self.stats.keys() if not k.startswith('phase') or 'error' not in self.stats.get(k, {})]),
+                "config_used": {
+                    "uri_base": self.config.get("uri_base"),
+                    "output_dir": str(self.config.get("output_dir")),
+                    "xml_language": self.config.get("xml_language", "fr")
+                }
+            },
+            "phase_statistics": self.stats.copy(),
+            "summary": self._generate_pipeline_summary()
+        }
+        
+        # Sauvegarde du fichier
+        output_path = Path(self.config["output_dir"]) / "pipeline_statistics.json"
+        with open(output_path, 'w', encoding='utf-8') as f:
+            json.dump(final_stats, f, indent=2, ensure_ascii=False, default=str)
+        
+        logger.info(f"Statistiques du pipeline sauvegardées : {output_path}")
+
+    def _generate_pipeline_summary(self) -> Dict[str, Any]:
+        """
+        Génère un résumé global du pipeline pour les statistiques finales.
+        
+        Returns:
+            Dictionnaire contenant le résumé du pipeline
+        """
+        summary = {
+            "total_execution_time": None,
+            "phases_completed": [],
+            "phases_with_errors": [],
+            "key_metrics": {}
+        }
+        
+        try:
+            # Calculer le temps d'exécution total
+            if hasattr(self, 'pipeline_start_time') and self.pipeline_start_time:
+                start_time = datetime.datetime.fromisoformat(self.pipeline_start_time) if isinstance(self.pipeline_start_time, str) else self.pipeline_start_time
+                end_time = datetime.datetime.now()
+                duration = end_time - start_time
+                summary["total_execution_time"] = str(duration)
+            
+            # Analyser les phases
+            for phase_key, phase_stats in self.stats.items():
+                if phase_key.startswith('phase'):
+                    if isinstance(phase_stats, dict):
+                        if 'error' in phase_stats:
+                            summary["phases_with_errors"].append(phase_key)
+                        else:
+                            summary["phases_completed"].append(phase_key)
+            
+            # Métriques clés
+            phase1_stats = self.stats.get("phase1", {})
+            phase7_stats = self.stats.get("phase7", {})
+            
+            summary["key_metrics"] = {
+                "initial_terms": phase1_stats.get("total_terms", 0),
+                "final_concepts": phase7_stats.get("total_concepts_exported", 0),
+                "files_generated": phase7_stats.get("files_generated", 0),
+                "pipeline_success": len(summary["phases_with_errors"]) == 0
+            }
+            
+        except Exception as e:
+            logger.warning(f"Erreur lors de la génération du résumé : {str(e)}")
+            summary["error"] = str(e)
+        
+        return summary
+
     def run_pipeline(self):
         """
         Exécute le pipeline complet de hiérarchisation du thésaurus.
@@ -139,7 +421,7 @@ class ThesaurusHierarchyBuilder:
         logger.info("Début du pipeline de hiérarchisation du thésaurus.")
         
         # Phase 1
-        df, lexical_indexes, existing_broader_relations = self.data_processor.preprocess_data()
+        df, lexical_indexes, existing_broader_relations = self.run_phase1_data_preparation()
 
         # Phase 2
         pattern_relations = self.run_phase2_pattern_detection(df, lexical_indexes)
@@ -152,7 +434,6 @@ class ThesaurusHierarchyBuilder:
         # Phase 4
         deduplicated_relations, semantic_zones, contextes_enrichis = self.run_phase4_embedding_analysis(df, all_prev_relations, lexical_indexes)
 
-        # Phase 5
         # ======================================================================
         # Intégration et Filtrage des Relations (Orchestrateur)
         # ======================================================================
@@ -174,12 +455,8 @@ class ThesaurusHierarchyBuilder:
         final_relations = self._combine_and_filter_relations(cleaned_relations_raw)
         logger.info(f"Relations après combinaison et filtrage initial: {len(final_relations)}")
 
-        builder = HierarchyBuilder(
-            lexical_indexes=lexical_indexes,
-            uri_base=self.config["uri_base"]
-        )
-        
-        hierarchy, enriched_indexes, report = builder.build_hierarchy(all_relations_raw)
+        # Phase 5        
+        hierarchy, enriched_indexes, report = self.run_phase5_hierarchy_building(all_relations_raw, lexical_indexes)
 
         print("Construction terminée !")
         print(f"Rapport : {json.dumps(report, indent=2, ensure_ascii=False)}")
@@ -190,22 +467,24 @@ class ThesaurusHierarchyBuilder:
         self.save_to_json(data=all_relations_raw, filename="all_relations_raw.json")
 
         # Phase 6 : Optimisation de la hiérarchie
-        # A implémenter
+        df, optimized_hierarchy, optimization_report = self.run_phase6_hierarchy_optimization(df, hierarchy, enriched_indexes)
 
-        # logger.info(f"Relations finales optimisées: {len(optimized_relations)}")
+        self.save_to_json(data=optimized_hierarchy, filename="optimized_hierarchy.json")
+        self.save_to_json(data=optimization_report, filename="optimization_report.json")
 
         # Phase 7 : Génération des sorties
-        # A implémenter
+        output_files = self.run_phase7_output_generation(
+            df, 
+            optimized_hierarchy, 
+            enriched_indexes
+        )
+
+        # Les chemins sont disponibles dans output_files
+        print(f"TSV généré: {output_files['tsv']}")
+        print(f"XML généré: {output_files['xml']}")  
+        print(f"Rapport généré: {output_files['html']}")
 
         logger.info("Pipeline terminé.")
-        logger.info("Statistiques globales du pipeline :")
-        for phase, stats_data in self.stats.items():
-            logger.info(f"  --- {phase.upper()} ---")
-            for key, value in stats_data.items():
-                if isinstance(value, float):
-                    logger.info(f"    {key}: {value:.3f}")
-                else:
-                    logger.info(f"    {key}: {value}")
 
     def save_to_json(self, data, filename: str) -> None:
         """

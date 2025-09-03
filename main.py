@@ -21,26 +21,6 @@ def parse_arguments() -> argparse.Namespace:
         help="Chemin du fichier TSV du thésaurus à traiter."
     )
     
-    parser.add_argument(
-        "--config",
-        type=str,
-        default=None,
-        help="Chemin vers un fichier de configuration JSON personnalisé (facultatif)."
-    )
-    
-    parser.add_argument(
-        "--sample-validation",
-        action="store_true",
-        help="Si activé, génère un échantillon de relations pour validation manuelle."
-    )
-    
-    parser.add_argument(
-        "--sample-size",
-        type=int,
-        default=50,
-        help="Taille de l’échantillon à générer pour validation (avec --sample-validation)."
-    )
-    
     return parser.parse_args()
 
 def main():
@@ -49,14 +29,8 @@ def main():
     """
     args = parse_arguments()
     
-    # Charger configuration personnalisée si fournie
-    config = None
-    if args.config:
-        with open(args.config, "r", encoding="utf-8") as f:
-            config = json.load(f)
-    
     # Initialisation de l’orchestrateur
-    builder = ThesaurusHierarchyBuilder(tsv_file_path=args.input, config=config)
+    builder = ThesaurusHierarchyBuilder(tsv_file_path=args.input)
     
     # Exécution complète du pipeline
     builder.run_pipeline()

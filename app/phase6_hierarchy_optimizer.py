@@ -1,416 +1,591 @@
 """
-Module hierarchy_optimizer.py
-Phase 6 : Optimisation de la hiérarchie.
+Module d'optimisation de la hirarchie du thésaurus - Phase 6.
+
+Ce module contient la classe principale pour l'optimisation des relations entre les
+concept SKOS en vue de la génération des fichiers de sortie.
 """
 
-from typing import Dict, List, Any
-from collections import defaultdict, deque
-import time
-from dataclasses import dataclass
-from operator import itemgetter
-
-from .logger import get_logger
-
-logger = get_logger(__name__)
-
-@dataclass
-class OptimizationStats:
-    """Statistiques d'optimisation pour le logging et le monitoring."""
-    initial_relations_count: int = 0
-    final_relations_count: int = 0
-    redundancies_removed: int = 0
-    cycles_detected: int = 0
-    cycles_resolved: int = 0
-    poly_hierarchy_adjustments: int = 0
-    execution_time: float = 0.0
+import logging
+import copy
+import pandas as pd
+from typing import Dict, List, Tuple, Any
+import networkx as nx
 
 class HierarchyOptimizer:
-    def __init__(self,
-                 max_parents_per_term: int = 3,
-                 enable_poly_hierarchy: bool = True):
+    """
+    Phase 6 : Optimisation hiérarchique
+    
+    Cette classe optimise la hiérarchie construite en :
+    1. Éliminant les redondances transitives
+    2. Validant les poly-hiérarchies
+    3. Détectant et résolvant les cycles
+
+    Elle met également à jour le Dataframe avec les URIs des nouveaux concepts
+    """
+    
+    def __init__(self, max_parents_per_node: int = 3, logger=None):
         """
         Initialise l'optimiseur hiérarchique.
-
-        Args:
-            max_parents_per_term: Nombre maximum de parents autorisés par terme
-            enable_poly_hierarchy: Autorise ou non plusieurs parents par terme
-        """
-        self.max_parents_per_term = max_parents_per_term
-        self.enable_poly_hierarchy = enable_poly_hierarchy
-        self.stats = OptimizationStats()
         
-        logger.info("Optimiseur hiérarchique initialisé")
-        logger.info(f"  - Max parents par terme : {max_parents_per_term}")
-        logger.info(f"  - Poly-hiérarchie activée : {enable_poly_hierarchy}")
-
-    def build_hierarchy_graph(self, relations: List[Dict[str, Any]]) -> Dict[str, List[str]]:
-        """
-        Construit un graphe de la hiérarchie en utilisant les URIs.
-
         Args:
-            relations: Liste des relations, chaque relation doit contenir 'child_uri' et 'parent_uri'.
-
-        Returns:
-            Un dictionnaire représentant le graphe d'adjacence {parent_uri: [child_uri]}.
+            max_parents_per_node: Nombre maximum de parents autorisés par terme
+            logger: Logger pour les messages
         """
-        graph = defaultdict(list)
-        for rel in relations:
-            # Assurez-vous que les URIs sont présentes. Si non, loggez une erreur et utilisez les prefLabels comme fallback.
-            child_node = rel.get('child_uri')
-            parent_node = rel.get('parent_uri')
+        self.max_parents_per_node = max_parents_per_node
+        self.logger = logger or logging.getLogger(__name__)
+        
+        # Statistiques de l'optimisation
+        self.stats = {
+            'transitive_relations_removed': 0,
+            'cycles_detected': 0,
+            'cycles_resolved': 0,
+            'poly_hierarchies_truncated': 0,
+            'nodes_processed': 0,
+            'new_uris_added': 0,
+            'relations_before_optimization': 0,
+            'relations_after_optimization': 0
+        }
 
-            if not child_node:
-                logger.warning(f"Relation sans 'child_uri', fallback sur 'child': {rel}")
-                child_node = rel['child']
-            if not parent_node:
-                logger.warning(f"Relation sans 'parent_uri', fallback sur 'parent': {rel}")
-                parent_node = rel['parent']
+    def optimize_hierarchy(self, 
+                          df: pd.DataFrame,
+                          hierarchy: Dict[str, Any], 
+                          enriched_indexes: Dict[str, Any]) -> Tuple[Dict[str, Any], Dict[str, Any]]:
+        """
+        Optimise la hiérarchie complète et met à jour le DataFrame avec les nouvelles URIs.
+        
+        Args:
+            df: DataFrame avec une colonne 'URI'
+            hierarchy: Structure hiérarchique à optimiser
+            enriched_indexes: Index enrichis des concepts
             
-            # Éviter les boucles réflexives (terme parent de lui-même)
-            if child_node != parent_node:
-                graph[parent_node].append(child_node)
+        Returns:
+            Tuple: (DataFrame mis à jour, hiérarchie optimisée, rapport d'optimisation)
+        """
+        self.logger.info("Début de l'optimisation hiérarchique")
+
+        # Copier le DataFrame pour éviter les modifications in-place
+        updated_df = df.copy()
+    
+        # Obtenir les URIs actuelles du DataFrame
+        existing_uris = set(updated_df['URI'].tolist()) if 'URI' in updated_df.columns else set()
+        
+        # Copier la hiérarchie pour éviter les modifications in-place
+        optimized_hierarchy = copy.deepcopy(hierarchy)
+        nodes = optimized_hierarchy.get('nodes', {})
+        
+        self.stats['nodes_processed'] = len(nodes)
+        self.stats['relations_before_optimization'] = self._count_relations(nodes)
+        
+        # Étape 1: Construire le graphe dirigé
+        graph = self._build_directed_graph(nodes)
+        
+        # Étape 2: Détecter et résoudre les cycles
+        self._detect_and_resolve_cycles(graph, nodes)
+        
+        # Étape 3: Éliminer les redondances transitives
+        self._eliminate_transitive_redundancies(graph, nodes)
+        
+        # Étape 4: Valider les poly-hiérarchies
+        self._validate_poly_hierarchies(nodes)
+        
+        # Étape 5: Reconstruire la structure optimisée
+        self._rebuild_hierarchy_structure(nodes)
+        
+        self.stats['relations_after_optimization'] = self._count_relations(nodes)
+        
+        # Enrichir le DataFrame avec les nouvelles URIs
+        updated_df = self._enrich_dataframe_with_new_uris(updated_df, existing_uris, enriched_indexes)
+
+        # Générer le rapport
+        optimization_report = self._generate_optimization_report()
+        
+        self.logger.info("Optimisation hiérarchique terminée")
+        self.logger.info(f"Relations supprimées par transitivité: {self.stats['transitive_relations_removed']}")
+        self.logger.info(f"Cycles détectés et résolus: {self.stats['cycles_resolved']}")
+        self.logger.info(f"Nouvelles URIs ajoutées au DataFrame: {self.stats.get('new_uris_added', 0)}")
+
+        return updated_df, optimized_hierarchy, optimization_report
+
+    def _build_directed_graph(self, nodes: Dict[str, Any]) -> nx.DiGraph:
+        """
+        Construit un graphe dirigé NetworkX à partir de la hiérarchie.
+        
+        Args:
+            nodes: Dictionnaire des nœuds de la hiérarchie
+            
+        Returns:
+            Graphe dirigé NetworkX
+        """
+        graph = nx.DiGraph()
+        
+        for uri, node_data in nodes.items():
+            # Ajouter le nœud avec ses métadonnées
+            graph.add_node(uri, **node_data)
+            
+            # Ajouter les arêtes parent -> enfant
+            parents = node_data.get('parents', [])
+            for parent_uri in parents:
+                graph.add_edge(parent_uri, uri)
+                
+        self.logger.debug(f"Graphe construit avec {graph.number_of_nodes()} nœuds et {graph.number_of_edges()} arêtes")
         return graph
 
-    def get_paths(self, graph: Dict[str, List[str]], start_node: str, end_node: str) -> List[List[str]]:
+    def _detect_and_resolve_cycles(self, graph: nx.DiGraph, nodes: Dict[str, Any]) -> None:
         """
-        Trouve tous les chemins entre deux nœuds dans le graphe en utilisant les URIs.
+        Détecte et résout les cycles dans la hiérarchie.
         
         Args:
-            graph: Le graphe d'adjacence.
-            start_node: L'URI du nœud de départ.
-            end_node: L'URI du nœud d'arrivée.
-            
-        Returns:
-            Liste de listes, chaque sous-liste étant un chemin (liste d'URIs).
+            graph: Graphe dirigé NetworkX
+            nodes: Dictionnaire des nœuds de la hiérarchie
         """
-        paths = []
-        queue = deque([(start_node, [start_node])]) # (current_node, current_path)
-        
-        while queue:
-            current_node, path = queue.popleft()
-            
-            if current_node == end_node:
-                paths.append(path)
-                continue # Ne pas explorer plus loin pour ce chemin complet
-            
-            # Éviter les boucles dans un même chemin
-            for neighbor in graph.get(current_node, []):
-                if neighbor not in path:
-                    queue.append((neighbor, path + [neighbor]))
-        return paths
-
-    def remove_redundancies(self, relations: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
-        """
-        Supprime les relations redondantes (transitives) en utilisant les URIs.
-        Ex: Si A -> B et B -> C existent, et A -> C existe, alors A -> C est redondant.
-
-        Args:
-            relations: Liste des relations à optimiser.
-
-        Returns:
-            Liste des relations après suppression des redondances.
-        """
-        logger.info("Détection et suppression des redondances transitives...")
-        initial_count = len(relations)
-        
-        # Créer un set de relations pour un lookup rapide et éviter les doublons accidentels
-        # Une relation est identifiée par (child_uri, parent_uri)
-        unique_relations = {} # {(child_uri, parent_uri): relation_dict}
-        for rel in relations:
-            child_uri = rel.get('child_uri')
-            parent_uri = rel.get('parent_uri')
-            if child_uri and parent_uri and child_uri != parent_uri:
-                # Utiliser la confiance comme critère de choix si plusieurs relations identiques
-                key = (child_uri, parent_uri)
-                if key not in unique_relations or rel.get('confidence', 0) > unique_relations[key].get('confidence', 0):
-                    unique_relations[key] = rel
-            else:
-                # Fallback ou ignorer les relations sans URIs valides pour la déduplication stricte
-                logger.warning(f"Ignoré une relation sans URIs complètes pour la déduplication: {rel}")
-        
-        relations_to_process = list(unique_relations.values())
-        
-        # Construire le graphe avec les relations initiales
-        graph = defaultdict(list)
-        # Chaque nœud du graphe est un URI. Les arêtes vont de parent à enfant.
-        for rel in relations_to_process:
-            graph[rel['parent_uri']].append(rel['child_uri'])
-            
-        final_relations = []
-        removed_count = 0
-        
-        for rel in relations_to_process:
-            child_uri = rel['child_uri']
-            parent_uri = rel['parent_uri']
-            
-            if child_uri == parent_uri: # Ignorer les relations réflexives
-                removed_count += 1
-                continue
-
-            is_redundant = False
-            
-            # Vérifier si un chemin existe de parent_uri à child_uri en passant par au moins un autre nœud
-            # Pour cela, on retire temporairement la relation directe (parent_uri -> child_uri)
-            # pour voir si un chemin indirect existe toujours.
-            
-            # Supprimer temporairement l'arête directe
-            if child_uri in graph[parent_uri]:
-                graph[parent_uri].remove(child_uri)
-            
-            # Chercher un chemin de parent_uri à child_uri dans le graphe modifié
-            # Une simple BFS/DFS suffit pour vérifier l'existence d'un chemin
-            q = deque([parent_uri])
-            visited = {parent_uri}
-            
-            while q:
-                current_node = q.popleft()
-                if current_node == child_uri:
-                    is_redundant = True
-                    break
-                for neighbor in graph.get(current_node, []):
-                    if neighbor not in visited:
-                        visited.add(neighbor)
-                        q.append(neighbor)
-            
-            # Réajouter l'arête pour les itérations suivantes
-            graph[parent_uri].append(child_uri)
-            
-            if is_redundant:
-                removed_count += 1
-            else:
-                final_relations.append(rel)
-        
-        self.stats.redundancies_removed += removed_count
-        logger.info(f"Supprimé {removed_count} relations redondantes. Reste {len(final_relations)} relations.")
-        return final_relations
-
-    def detect_cycles(self, graph: Dict[str, List[str]]) -> List[List[str]]:
-        """
-        Détecte les cycles dans le graphe de hiérarchie en utilisant les URIs (DFS).
-
-        Args:
-            graph: Le graphe d'adjacence {parent_uri: [child_uri]}.
-
-        Returns:
-            Liste de listes, chaque sous-liste étant un cycle (liste d'URIs).
-        """
-        logger.info("Détection des cycles dans la hiérarchie...")
-        cycles = []
-        visited = set()      # Nœuds visités
-        recursion_stack = set() # Nœuds actuellement dans le chemin DFS
-        
-        # Pour stocker les chemins jusqu'au nœud courant
-        path_tracker = {} 
-
-        def dfs(node: str, current_path: List[str]):
-            visited.add(node)
-            recursion_stack.add(node)
-            path_tracker[node] = current_path
-            
-            for neighbor in graph.get(node, []):
-                if neighbor in recursion_stack: # Cycle détecté
-                    cycle = current_path[current_path.index(neighbor):] + [neighbor]
-                    if cycle not in cycles: # Éviter les doublons de cycles (ex: [A,B,C,A] vs [B,C,A,B])
-                        # Normaliser le cycle pour le rendre unique (ex: commencer par le min URI)
-                        min_uri = min(cycle[:-1])
-                        start_idx = cycle[:-1].index(min_uri)
-                        normalized_cycle = cycle[start_idx:-1] + cycle[:start_idx] + [min_uri] # Le dernier est le premier
-                        
-                        if normalized_cycle not in cycles:
-                            cycles.append(normalized_cycle)
-                elif neighbor not in visited:
-                    dfs(neighbor, current_path + [neighbor])
-            
-            recursion_stack.remove(node) # Retirer du stack après exploration
-            
-        for node in graph: # Parcourir tous les nœuds du graphe
-            if node not in visited:
-                dfs(node, [node])
-        
-        self.stats.cycles_detected += len(cycles)
-        logger.info(f"Détecté {len(cycles)} cycles.")
-        return cycles
-
-    def resolve_cycles(self, relations: List[Dict[str, Any]], cycles: List[List[str]]) -> List[Dict[str, Any]]:
-        """
-        Résout les cycles en supprimant la relation la moins "confiante" dans chaque cycle.
-        
-        Args:
-            relations: Liste des relations hiérarchiques.
-            cycles: Liste des cycles détectés (chaque cycle est une liste d'URIs).
-            
-        Returns:
-            Liste des relations après résolution des cycles.
-        """
-        logger.info(f"Résolution de {len(cycles)} cycles...")
-        if not cycles:
-            return relations
-
-        relations_dict = {} # (child_uri, parent_uri) -> relation_dict
-        for rel in relations:
-            relations_dict[(rel['child_uri'], rel['parent_uri'])] = rel
-        
-        removed_relations_count = 0
-        
-        for cycle in cycles:
-            # Un cycle est [A, B, C, A] -> relations sont (A,B), (B,C), (C,A)
-            # Construire les paires (child_uri, parent_uri) pour chaque relation du cycle
-            cycle_relations_keys = []
-            for i in range(len(cycle) - 1):
-                child_uri_in_cycle = cycle[i] # L'enfant dans le cycle
-                parent_uri_in_cycle = cycle[i+1] # Le parent dans le cycle
-                # Les relations dans notre modèle sont (child, parent), donc il faut inverser si le cycle est parent -> child -> ...
-                # Si le cycle est A -> B -> C -> A, cela veut dire que A est parent de B, B parent de C, C parent de A.
-                # Donc les relations sont (B,A), (C,B), (A,C).
-                # Vérifions la structure du graphe: {parent_uri: [child_uri]}
-                # Si cycle est [A, B, C, A], cela signifie A est enfant de C, B est enfant de A, C est enfant de B.
-                # Ou si le graphe est {child_uri: [parent_uri]}, alors c'est A parent de B, B parent de C, C parent de A.
-                # Le build_hierarchy_graph est {parent_uri: [child_uri]}, donc A -> B signifie (B, A)
-                # Un cycle [N1, N2, ..., Nk, N1] signifie N1 parent de N2, N2 parent de N3, ..., Nk parent de N1
-                # Donc les relations correspondantes sont (N2, N1), (N3, N2), ..., (N1, Nk)
-                
-                # Le cycle est de la forme [N1, N2, N3, N1] où N1 -> N2, N2 -> N3, N3 -> N1
-                # Cela signifie les relations sont (N2, N1), (N3, N2), (N1, N3)
-                child_uri = cycle[i+1] # L'enfant dans la relation
-                parent_uri = cycle[i] # Le parent dans la relation
-                cycle_relations_keys.append((child_uri, parent_uri))
-            
-            # La dernière relation du cycle est de cycle[-1] vers cycle[0]
-            cycle_relations_keys.append((cycle[0], cycle[-2])) # Cycle est [N1, N2, N3, N1], rels sont (N2,N1), (N3,N2), (N1,N3)
-
-            # Trouver la relation avec la plus faible confiance dans le cycle
-            # Assurez-vous que toutes les clés existent dans relations_dict
-            valid_cycle_relations = []
-            for key in cycle_relations_keys:
-                if key in relations_dict:
-                    valid_cycle_relations.append(relations_dict[key])
-                else:
-                    logger.warning(f"Relation de cycle non trouvée dans le dictionnaire des relations : {key}")
-            
-            if not valid_cycle_relations:
-                logger.warning(f"Aucune relation valide trouvée pour le cycle : {cycle}. Impossible de résoudre.")
-                continue
-
-            # Trouver la relation avec la plus faible confiance
-            weakest_relation = min(valid_cycle_relations, key=itemgetter('confidence'))
-            
-            # Supprimer cette relation de la liste des relations
-            key_to_remove = (weakest_relation['child_uri'], weakest_relation['parent_uri'])
-            if key_to_remove in relations_dict:
-                del relations_dict[key_to_remove]
-                removed_relations_count += 1
-                self.stats.cycles_resolved += 1
-                logger.info(f"Résolu cycle en supprimant la relation: {weakest_relation['child']} -> {weakest_relation['parent']} (confiance: {weakest_relation['confidence']:.2f})")
-            else:
-                logger.warning(f"Tentative de suppression d'une relation déjà absente ou non trouvée lors de la résolution de cycle: {key_to_remove}")
-
-        logger.info(f"Terminé. {removed_relations_count} relations supprimées pour résoudre les cycles.")
-        return list(relations_dict.values())
-
-    def validate_poly_hierarchy(self, relations: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
-        """
-        Valide et ajuste la poly-hiérarchie en limitant le nombre de parents par terme.
-        Si la poly-hiérarchie est désactivée, s'assure qu'il n'y a qu'un seul parent.
-
-        Args:
-            relations: Liste des relations hiérarchiques.
-
-        Returns:
-            Liste des relations ajustées.
-        """
-        logger.info("Validation et ajustement de la poly-hiérarchie...")
-        final_relations = []
-        child_parent_counts = defaultdict(list) # child_uri -> [(parent_uri, confidence, relation_dict)]
-        
-        for rel in relations:
-            child_uri = rel.get('child_uri')
-            parent_uri = rel.get('parent_uri')
-            if child_uri and parent_uri and child_uri != parent_uri:
-                child_parent_counts[child_uri].append((parent_uri, rel.get('confidence', 0.0), rel))
-            else:
-                logger.warning(f"Ignoré une relation mal formée pour la validation de poly-hiérarchie: {rel}")
-
-        adjustments_made = 0
-        for child_uri, parents_info in child_parent_counts.items():
-            if not self.enable_poly_hierarchy:
-                # Si la poly-hiérarchie est désactivée, limiter à 1 parent
-                if len(parents_info) > 1:
-                    # Garder le parent avec la plus haute confiance
-                    best_parent = max(parents_info, key=itemgetter(1)) # itemgetter(1) pour la confiance
-                    final_relations.append(best_parent[2]) # Ajouter le dictionnaire de relation complet
-                    adjustments_made += (len(parents_info) - 1)
-                elif len(parents_info) == 1:
-                    final_relations.append(parents_info[0][2])
-            else:
-                # Si la poly-hiérarchie est activée, mais limitée par max_parents_per_term
-                if len(parents_info) > self.max_parents_per_term:
-                    # Garder les N parents avec la plus haute confiance
-                    sorted_parents = sorted(parents_info, key=itemgetter(1), reverse=True)
-                    for i in range(self.max_parents_per_term):
-                        final_relations.append(sorted_parents[i][2])
-                    adjustments_made += (len(parents_info) - self.max_parents_per_term)
-                else:
-                    # Ajouter toutes les relations si elles respectent la limite
-                    for parent_info in parents_info:
-                        final_relations.append(parent_info[2])
-                        
-        self.stats.poly_hierarchy_adjustments += adjustments_made
-        logger.info(f"Ajusté {adjustments_made} relations pour la poly-hiérarchie. Reste {len(final_relations)} relations.")
-        return final_relations
-        
-    def optimize_hierarchy(self, relations: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
-        """
-        Exécute toutes les étapes d'optimisation hiérarchique.
-
-        Args:
-            relations: Liste des relations à optimiser (chaque relation doit avoir child_uri et parent_uri).
-
-        Returns:
-            Liste des relations hiérarchiques optimisées.
-        """
-        logger.info("Début de l'optimisation hiérarchique...")
-        start_time = time.time()
-        self.stats = OptimizationStats(initial_relations_count=len(relations)) # Réinitialiser les stats
-
         try:
-            # 1. Suppression des redondances transitives
-            relations = self.remove_redundancies(relations)
+            # Détecter les cycles
+            cycles = list(nx.simple_cycles(graph))
+            self.stats['cycles_detected'] = len(cycles)
             
-            # Reconstruire le graphe après suppression des redondances pour la détection de cycles
-            graph = self.build_hierarchy_graph(relations)
-
-            # 2. Détection et résolution des cycles
-            cycles = self.detect_cycles(graph)
             if cycles:
-                relations = self.resolve_cycles(relations, cycles)
-                # Reconstruire le graphe après résolution des cycles pour la validation poly-hiérarchie
-                graph = self.build_hierarchy_graph(relations)
-
-            # 3. Validation de la poly-hiérarchie
-            relations = self.validate_poly_hierarchy(relations)
-
-            self.stats.final_relations_count = len(relations)
-            self.stats.execution_time = time.time() - start_time
-            
-            # Statistiques finales
-            logger.info(f"Optimisation terminée en {self.stats.execution_time:.3f}s")
-            logger.info(f"Statistiques: {self.stats.initial_relations_count} -> "
-                           f"{self.stats.final_relations_count} relations "
-                           f"({self.stats.redundancies_removed} redondances, "
-                           f"{self.stats.cycles_resolved} cycles résolus, "
-                           f"{self.stats.poly_hierarchy_adjustments} ajustements poly-hiérarchie)")
-            
-            return relations
-            
+                self.logger.warning(f"Détection de {len(cycles)} cycle(s) dans la hiérarchie")
+                
+                for i, cycle in enumerate(cycles):
+                    self.logger.warning(f"Cycle {i+1}: {' -> '.join(cycle)} -> {cycle[0]}")
+                    
+                    # Résoudre le cycle en supprimant l'arête la plus faible
+                    self._resolve_cycle(cycle, graph, nodes)
+                    self.stats['cycles_resolved'] += 1
+                    
         except Exception as e:
-            logger.error(f"Erreur lors de l'optimisation hiérarchique: {e}")
-            raise
+            self.logger.error(f"Erreur lors de la détection des cycles: {e}")
 
-    def get_optimization_stats(self) -> OptimizationStats:
+    def _resolve_cycle(self, cycle: List[str], graph: nx.DiGraph, nodes: Dict[str, Any]) -> None:
         """
-        Retourne les statistiques de la dernière optimisation.
+        Résout un cycle en supprimant l'arête avec le score de confiance le plus faible.
+        
+        Args:
+            cycle: Liste des URIs formant le cycle
+            graph: Graphe dirigé NetworkX
+            nodes: Dictionnaire des nœuds de la hiérarchie
+        """
+        if len(cycle) < 2:
+            return
+            
+        # Trouver l'arête la plus faible dans le cycle
+        weakest_edge = None
+        min_confidence = float('inf')
+        
+        for i in range(len(cycle)):
+            current_uri = cycle[i]
+            next_uri = cycle[(i + 1) % len(cycle)]
+            
+            # Chercher la confiance de cette relation
+            confidence = self._get_relation_confidence(current_uri, next_uri, nodes)
+            
+            if confidence < min_confidence:
+                min_confidence = confidence
+                weakest_edge = (current_uri, next_uri)
+        
+        if weakest_edge:
+            parent_uri, child_uri = weakest_edge
+            
+            # Supprimer l'arête du graphe
+            if graph.has_edge(parent_uri, child_uri):
+                graph.remove_edge(parent_uri, child_uri)
+            
+            # Mettre à jour la structure des nœuds
+            if child_uri in nodes and 'parents' in nodes[child_uri]:
+                if parent_uri in nodes[child_uri]['parents']:
+                    nodes[child_uri]['parents'].remove(parent_uri)
+                    
+            if parent_uri in nodes and 'children' in nodes[parent_uri]:
+                if child_uri in nodes[parent_uri]['children']:
+                    nodes[parent_uri]['children'].remove(child_uri)
+            
+            self.logger.info(f"Cycle résolu: suppression de la relation {parent_uri} -> {child_uri} (confiance: {min_confidence:.3f})")
+
+    def _get_relation_confidence(self, parent_uri: str, child_uri: str, nodes: Dict[str, Any]) -> float:
+        """
+        Récupère le score de confiance d'une relation parent-enfant.
+        
+        Args:
+            parent_uri: URI du parent
+            child_uri: URI de l'enfant
+            nodes: Dictionnaire des nœuds
+            
+        Returns:
+            Score de confiance (0.0 si non trouvé)
+        """
+        # Chercher dans les métadonnées du nœud enfant
+        child_node = nodes.get(child_uri, {})
+        metadata = child_node.get('metadata', {})
+        
+        # Si on a des relations candidates avec des scores
+        if 'relation_scores' in metadata:
+            return metadata['relation_scores'].get(parent_uri, 0.5)
+        
+        # Score par défaut basé sur le type de source
+        source = metadata.get('source', 'unknown')
+        default_scores = {
+            'existing_skos_broader': 0.9,
+            'pattern_inclusion': 0.8,
+            'lexical_similarity': 0.6,
+            'embedding': 0.7,
+            'generation': 0.5
+        }
+        
+        return default_scores.get(source, 0.5)
+
+    def _eliminate_transitive_redundancies(self, graph: nx.DiGraph, nodes: Dict[str, Any]) -> None:
+        """
+        Élimine les redondances transitives (A->B, B->C, A->C => supprimer A->C).
+        
+        Args:
+            graph: Graphe dirigé NetworkX
+            nodes: Dictionnaire des nœuds de la hiérarchie
+        """
+        self.logger.info("Élimination des redondances transitives")
+        
+        transitive_edges_to_remove = set()
+        
+        # Pour chaque nœud, vérifier les chemins transitifs
+        for node_uri in list(graph.nodes()):
+            # Obtenir tous les descendants directs et indirects
+            direct_children = set(graph.successors(node_uri))
+            
+            if len(direct_children) < 2:
+                continue
+                
+            # Calculer la fermeture transitive pour ce nœud
+            reachable_nodes = set()
+            for child in direct_children:
+                # Obtenir tous les descendants de cet enfant direct
+                descendants = nx.descendants(graph, child)
+                reachable_nodes.update(descendants)
+            
+            # Identifier les arêtes redondantes
+            redundant_edges = direct_children.intersection(reachable_nodes)
+            
+            for redundant_child in redundant_edges:
+                # Vérifier qu'il existe bien un chemin alternatif
+                if self._has_alternative_path(graph, node_uri, redundant_child, exclude_direct=True):
+                    transitive_edges_to_remove.add((node_uri, redundant_child))
+        
+        # Supprimer les arêtes transitives identifiées
+        for parent_uri, child_uri in transitive_edges_to_remove:
+            if graph.has_edge(parent_uri, child_uri):
+                graph.remove_edge(parent_uri, child_uri)
+                
+                # Mettre à jour la structure des nœuds
+                if child_uri in nodes and 'parents' in nodes[child_uri]:
+                    if parent_uri in nodes[child_uri]['parents']:
+                        nodes[child_uri]['parents'].remove(parent_uri)
+                        
+                if parent_uri in nodes and 'children' in nodes[parent_uri]:
+                    if child_uri in nodes[parent_uri]['children']:
+                        nodes[parent_uri]['children'].remove(child_uri)
+                
+                self.stats['transitive_relations_removed'] += 1
+                self.logger.debug(f"Relation transitive supprimée: {parent_uri} -> {child_uri}")
+
+    def _has_alternative_path(self, graph: nx.DiGraph, source: str, target: str, exclude_direct: bool = True) -> bool:
+        """
+        Vérifie s'il existe un chemin alternatif entre deux nœuds.
+        
+        Args:
+            graph: Graphe dirigé
+            source: Nœud source
+            target: Nœud cible
+            exclude_direct: Si True, ignore le chemin direct
+            
+        Returns:
+            True s'il existe un chemin alternatif
+        """
+        if not graph.has_node(source) or not graph.has_node(target):
+            return False
+        
+        # Créer une copie temporaire du graphe
+        temp_graph = graph.copy()
+        
+        # Supprimer l'arête directe si elle existe et si demandé
+        if exclude_direct and temp_graph.has_edge(source, target):
+            temp_graph.remove_edge(source, target)
+        
+        # Vérifier s'il existe encore un chemin
+        try:
+            return nx.has_path(temp_graph, source, target)
+        except nx.NetworkXNoPath:
+            return False
+
+    def _validate_poly_hierarchies(self, nodes: Dict[str, Any]) -> None:
+        """
+        Valide les poly-hiérarchies en limitant le nombre de parents par nœud.
+        
+        Args:
+            nodes: Dictionnaire des nœuds de la hiérarchie
+        """
+        self.logger.info(f"Validation des poly-hiérarchies (max {self.max_parents_per_node} parents)")
+        
+        for uri, node_data in nodes.items():
+            parents = node_data.get('parents', [])
+            
+            if len(parents) > self.max_parents_per_node:
+                self.logger.warning(f"Nœud {uri} a {len(parents)} parents, réduction à {self.max_parents_per_node}")
+                
+                # Trier les parents par score de confiance (décroissant)
+                parent_scores = []
+                for parent_uri in parents:
+                    confidence = self._get_relation_confidence(parent_uri, uri, nodes)
+                    parent_scores.append((parent_uri, confidence))
+                
+                # Garder seulement les N meilleurs parents
+                parent_scores.sort(key=lambda x: x[1], reverse=True)
+                best_parents = [parent for parent, _ in parent_scores[:self.max_parents_per_node]]
+                removed_parents = [parent for parent, _ in parent_scores[self.max_parents_per_node:]]
+                
+                # Mettre à jour la liste des parents
+                node_data['parents'] = best_parents
+                
+                # Mettre à jour les enfants des parents supprimés
+                for removed_parent in removed_parents:
+                    if removed_parent in nodes and 'children' in nodes[removed_parent]:
+                        if uri in nodes[removed_parent]['children']:
+                            nodes[removed_parent]['children'].remove(uri)
+                
+                self.stats['poly_hierarchies_truncated'] += 1
+                self.logger.debug(f"Parents supprimés pour {uri}: {removed_parents}")
+
+    def _rebuild_hierarchy_structure(self, nodes: Dict[str, Any]) -> None:
+        """
+        Reconstruit la cohérence de la structure hiérarchique.
+        
+        Args:
+            nodes: Dictionnaire des nœuds de la hiérarchie
+        """
+        self.logger.debug("Reconstruction de la structure hiérarchique")
+        
+        # Vérifier la cohérence parent-enfant
+        for uri, node_data in nodes.items():
+            parents = node_data.get('parents', [])
+            children = node_data.get('children', [])
+            
+            # S'assurer que tous les parents connaissent cet enfant
+            for parent_uri in parents:
+                if parent_uri in nodes:
+                    parent_children = nodes[parent_uri].setdefault('children', [])
+                    if uri not in parent_children:
+                        parent_children.append(uri)
+            
+            # S'assurer que tous les enfants connaissent ce parent
+            for child_uri in children:
+                if child_uri in nodes:
+                    child_parents = nodes[child_uri].setdefault('parents', [])
+                    if uri not in child_parents:
+                        child_parents.append(uri)
+
+    def _enrich_dataframe_with_new_uris(self, df: Any, existing_uris: set, enriched_indexes: Dict[str, Any]) -> Any:
+        """
+        Enrichit le DataFrame avec les URIs présentes dans enriched_indexes mais absentes du DataFrame.
+        
+        Args:
+            df: DataFrame à enrichir
+            existing_uris: Set des URIs déjà présentes dans le DataFrame
+            enriched_indexes: Index enrichis contenant potentiellement de nouvelles URIs
+            
+        Returns:
+            DataFrame enrichi
+        """
+        new_rows = []
+        new_uris_added = 0
+        
+        # Extraire les URIs des enriched_indexes
+        enriched_uris = set()
+        
+        # Si enriched_indexes contient une structure avec des URIs
+        if isinstance(enriched_indexes, dict):
+            # Cas 1: enriched_indexes est un dict avec des clés URI
+            enriched_uris.update(enriched_indexes.keys())
+            
+            # Cas 2: enriched_indexes contient des sous-structures avec des URIs
+            for key, value in enriched_indexes.items():
+                if isinstance(value, dict):
+                    enriched_uris.update(value.keys())
+                elif isinstance(value, list):
+                    for item in value:
+                        if isinstance(item, str):
+                            enriched_uris.add(item)
+                        elif isinstance(item, dict) and 'uri' in item:
+                            enriched_uris.add(item['uri'])
+        
+        # Trouver les URIs manquantes
+        missing_uris = enriched_uris - existing_uris
+        
+        # Créer de nouvelles lignes pour les URIs manquantes
+        for uri in missing_uris:
+            # Créer une nouvelle ligne avec l'URI et des valeurs par défaut pour les autres colonnes
+            new_row = {'URI': uri}
+            
+            # Ajouter des valeurs par défaut pour les autres colonnes existantes
+            for col in df.columns:
+                if col != 'URI':
+                    new_row[col] = None  # ou une valeur par défaut appropriée
+            
+            new_rows.append(new_row)
+            new_uris_added += 1
+        
+        if new_rows:
+            # Créer un DataFrame avec les nouvelles lignes
+            import pandas as pd  # Assurez-vous d'importer pandas en haut du fichier
+            new_df = pd.DataFrame(new_rows)
+            
+            # Concaténer avec le DataFrame existant
+            enriched_df = pd.concat([df, new_df], ignore_index=True)
+            
+            self.logger.info(f"Ajout de {new_uris_added} nouvelles URIs au DataFrame")
+            self.stats['new_uris_added'] = new_uris_added
+            
+            return enriched_df
+        else:
+            self.logger.info("Aucune nouvelle URI à ajouter au DataFrame")
+            self.stats['new_uris_added'] = 0
+            return df
+
+    def _count_relations(self, nodes: Dict[str, Any]) -> int:
+        """
+        Compte le nombre total de relations dans la hiérarchie.
+        
+        Args:
+            nodes: Dictionnaire des nœuds
+            
+        Returns:
+            Nombre total de relations parent-enfant
+        """
+        total_relations = 0
+        for node_data in nodes.values():
+            total_relations += len(node_data.get('children', []))
+        return total_relations
+
+    def _generate_optimization_report(self) -> Dict[str, Any]:
+        """
+        Génère un rapport détaillé de l'optimisation.
         
         Returns:
-            OptimizationStats: Statistiques détaillées
+            Dictionnaire contenant les statistiques et métriques
         """
-        return self.stats
+        relations_reduction = self.stats['relations_before_optimization'] - self.stats['relations_after_optimization']
+        reduction_percentage = (relations_reduction / max(1, self.stats['relations_before_optimization'])) * 100
+        
+        report = {
+            'optimization_summary': {
+                'nodes_processed': self.stats['nodes_processed'],
+                'relations_before': self.stats['relations_before_optimization'],
+                'relations_after': self.stats['relations_after_optimization'],
+                'relations_removed': relations_reduction,
+                'reduction_percentage': round(reduction_percentage, 2)
+            },
+            'transitive_optimization': {
+                'transitive_relations_removed': self.stats['transitive_relations_removed']
+            },
+            'cycle_resolution': {
+                'cycles_detected': self.stats['cycles_detected'],
+                'cycles_resolved': self.stats['cycles_resolved']
+            },
+            'poly_hierarchy_validation': {
+                'max_parents_allowed': self.max_parents_per_node,
+                'nodes_with_excess_parents': self.stats['poly_hierarchies_truncated']
+            },
+            'dataframe_enrichment': {
+                'new_uris_added': self.stats.get('new_uris_added', 0),
+                'enrichment_status': 'Success' if self.stats.get('new_uris_added', 0) >= 0 else 'Failed'
+            },
+            'quality_metrics': {
+                'optimization_efficiency': round(self.stats['transitive_relations_removed'] / max(1, self.stats['relations_before_optimization']) * 100, 2),
+                'hierarchy_health': 'Good' if self.stats['cycles_resolved'] == self.stats['cycles_detected'] else 'Needs attention',
+                'dataframe_completeness': round((self.stats.get('new_uris_added', 0) / max(1, self.stats['nodes_processed'])) * 100, 2)
+            }
+        }
+        
+        return report
+
+    def get_statistics(self) -> Dict[str, Any]:
+        """
+        Retourne les statistiques de l'optimisation.
+        
+        Returns:
+            Dictionnaire des statistiques
+        """
+        return self.stats.copy()
+
+    def validate_hierarchy_integrity(self, hierarchy: Dict[str, Any]) -> Dict[str, Any]:
+        """
+        Valide l'intégrité de la hiérarchie après optimisation.
+        
+        Args:
+            hierarchy: Structure hiérarchique à valider
+            
+        Returns:
+            Rapport de validation
+        """
+        nodes = hierarchy.get('nodes', {})
+        validation_report = {
+            'total_nodes': len(nodes),
+            'orphan_nodes': 0,
+            'root_nodes': 0,
+            'leaf_nodes': 0,
+            'integrity_issues': [],
+            'max_depth': 0,
+            'average_children_per_node': 0,
+            'average_parents_per_node': 0
+        }
+        
+        total_children = 0
+        total_parents = 0
+        
+        for uri, node_data in nodes.items():
+            parents = node_data.get('parents', [])
+            children = node_data.get('children', [])
+            
+            total_parents += len(parents)
+            total_children += len(children)
+            
+            # Compter les différents types de nœuds
+            if not parents and not children:
+                validation_report['orphan_nodes'] += 1
+            elif not parents:
+                validation_report['root_nodes'] += 1
+            elif not children:
+                validation_report['leaf_nodes'] += 1
+            
+            # Vérifier l'intégrité des relations
+            for parent_uri in parents:
+                if parent_uri not in nodes:
+                    validation_report['integrity_issues'].append(f"Parent manquant: {parent_uri} pour {uri}")
+                elif uri not in nodes[parent_uri].get('children', []):
+                    validation_report['integrity_issues'].append(f"Incohérence parent-enfant: {parent_uri} -> {uri}")
+            
+            for child_uri in children:
+                if child_uri not in nodes:
+                    validation_report['integrity_issues'].append(f"Enfant manquant: {child_uri} pour {uri}")
+                elif uri not in nodes[child_uri].get('parents', []):
+                    validation_report['integrity_issues'].append(f"Incohérence enfant-parent: {uri} -> {child_uri}")
+        
+        # Calculer les moyennes
+        if validation_report['total_nodes'] > 0:
+            validation_report['average_children_per_node'] = round(total_children / validation_report['total_nodes'], 2)
+            validation_report['average_parents_per_node'] = round(total_parents / validation_report['total_nodes'], 2)
+        
+        # Calculer la profondeur maximale
+        try:
+            graph = self._build_directed_graph(nodes)
+            if graph.number_of_nodes() > 0:
+                # Trouver tous les nœuds racines
+                root_nodes = [n for n in graph.nodes() if graph.in_degree(n) == 0]
+                max_depth = 0
+                for root in root_nodes:
+                    try:
+                        depths = nx.single_source_shortest_path_length(graph, root)
+                        max_depth = max(max_depth, max(depths.values()) if depths else 0)
+                    except:
+                        continue
+                validation_report['max_depth'] = max_depth
+        except Exception as e:
+            validation_report['integrity_issues'].append(f"Erreur de calcul de profondeur: {str(e)}")
+        
+        return validation_report
